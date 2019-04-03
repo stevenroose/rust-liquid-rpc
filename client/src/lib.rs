@@ -142,7 +142,7 @@ fn handle_defaults<'a, 'b>(
 }
 
 /// Trait implementing the Liquid RPC commands.
-pub trait RpcApi: Sized {
+pub trait LiquidRpcApi: Sized {
     fn call<T: for<'a> serde::de::Deserialize<'a>>(
         &self,
         cmd: &str,
@@ -581,7 +581,7 @@ pub trait RpcApi: Sized {
 /// A Liquid RPC client.
 ///
 /// This type implements both the [bitcoincore_rpc::RpcApi] trait as the
-/// [liquid_rpc::RpcApi] trait.  Methods that are shared between Liquid and
+/// [liquid_rpc::LiquidRpcApi] trait.  Methods that are shared between Liquid and
 /// Bitcoin Core can be used from the former and changed or new methods are
 /// provided by the latter.
 pub struct Client(bitcoincore_rpc::Client);
@@ -610,7 +610,7 @@ impl bitcoincore_rpc::RpcApi for Client {
     }
 }
 
-impl RpcApi for Client {
+impl LiquidRpcApi for Client {
     fn call<T: for<'a> serde::de::Deserialize<'a>>(
         &self,
         cmd: &str,
