@@ -28,6 +28,7 @@ extern crate serde;
 extern crate serde_json;
 
 pub extern crate liquid_rpc_json;
+pub use bitcoincore_rpc::json as btcjson;
 pub use liquid_rpc_json as json;
 
 use std::collections::HashMap;
@@ -169,11 +170,7 @@ pub trait RpcApi: Sized {
         txid: &sha256d::Hash,
         block_hash: Option<&sha256d::Hash>,
     ) -> Result<elements::Transaction> {
-        let mut args = [
-            into_json(txid)?,
-            into_json(false)?,
-            opt_into_json(block_hash)?,
-        ];
+        let mut args = [into_json(txid)?, into_json(false)?, opt_into_json(block_hash)?];
         let hex: String = self.call("getrawtransaction", handle_defaults(&mut args, &[null()]))?;
         let bytes = hex::decode(hex)?;
         Ok(encode::deserialize(&bytes)?)
@@ -184,11 +181,7 @@ pub trait RpcApi: Sized {
         txid: &sha256d::Hash,
         block_hash: Option<&sha256d::Hash>,
     ) -> Result<json::GetRawTransactionResult> {
-        let mut args = [
-            into_json(txid)?,
-            into_json(true)?,
-            opt_into_json(block_hash)?,
-        ];
+        let mut args = [into_json(txid)?, into_json(true)?, opt_into_json(block_hash)?];
         self.call("getrawtransaction", handle_defaults(&mut args, &[null()]))
     }
 
@@ -217,10 +210,7 @@ pub trait RpcApi: Sized {
             opt_into_json(asset_label)?,
             opt_into_json(ignore_blind_fail)?,
         ];
-        self.call(
-            "sendtoaddress",
-            handle_defaults(&mut args, &vec![null(); 8]),
-        )
+        self.call("sendtoaddress", handle_defaults(&mut args, &vec![null(); 8]))
     }
 
     fn create_raw_transaction_hex(
@@ -239,10 +229,7 @@ pub trait RpcApi: Sized {
             opt_into_json(assets)?,
         ];
         let defaults = [into_json(0i64)?, null(), null()];
-        self.call(
-            "createrawtransaction",
-            handle_defaults(&mut args, &defaults),
-        )
+        self.call("createrawtransaction", handle_defaults(&mut args, &defaults))
     }
 
     fn create_raw_transaction(
@@ -274,14 +261,12 @@ pub trait RpcApi: Sized {
             opt_into_json(include_unsafe)?,
             opt_into_json(query_options)?,
         ];
-        let defaults = [
-            into_json(0)?,
-            into_json(9999999)?,
-            null(),
-            into_json(true)?,
-            null(),
-        ];
+        let defaults = [into_json(0)?, into_json(9999999)?, null(), into_json(true)?, null()];
         self.call("listunspent", handle_defaults(&mut args, &defaults))
+    }
+
+    fn get_new_address(&self, address_type: Option<btcjson::AddressType>) -> Result<String> {
+        self.call("getnewaddress", &["".into(), opt_into_json(address_type)?])
     }
 
     fn get_address_info(&self, address: &str) -> Result<json::GetAddressInfoResult> {
@@ -293,13 +278,12 @@ pub trait RpcApi: Sized {
         outpoint: elements::OutPoint,
         include_mempool: Option<bool>,
     ) -> Result<json::GetTxOutResult> {
-        let mut args = [
-            into_json(outpoint.txid)?,
-            into_json(outpoint.vout)?,
-            opt_into_json(include_mempool)?,
-        ];
+        let mut args =
+            [into_json(outpoint.txid)?, into_json(outpoint.vout)?, opt_into_json(include_mempool)?];
         self.call("gettxout", handle_defaults(&mut args, &[null()]))
     }
+
+    // Liquid-only calls
 
     // TODO(stevenroose)
     // sendmany
@@ -353,10 +337,7 @@ pub trait RpcApi: Sized {
             opt_into_json(bip32_counter)?,
             opt_into_json(liquid_pak)?,
         ];
-        self.call(
-            "initpegoutwallet",
-            handle_defaults(&mut args, &[0.into(), null()]),
-        )
+        self.call("initpegoutwallet", handle_defaults(&mut args, &[0.into(), null()]))
     }
 
     fn send_to_main_chain(
@@ -381,10 +362,7 @@ pub trait RpcApi: Sized {
     }
 
     fn tweak_fedpeg_script(&self, claim_script: &Script) -> Result<json::TweakFedpegScriptResult> {
-        self.call(
-            "tweakfedpegscript",
-            &[into_json_hex(claim_script.as_bytes())?],
-        )
+        self.call("tweakfedpegscript", &[into_json_hex(claim_script.as_bytes())?])
     }
 
     fn list_issuances(&self, asset: Option<AssetId>) -> Result<Vec<json::ListIssuancesResult>> {
@@ -411,10 +389,7 @@ pub trait RpcApi: Sized {
         asset: AssetId,
         asset_amount: Amount,
     ) -> Result<json::ReissueAssetResult> {
-        self.call(
-            "reissueasset",
-            &[into_json(asset)?, into_json(ser_amount(&asset_amount))?],
-        )
+        self.call("reissueasset", &[into_json(asset)?, into_json(ser_amount(&asset_amount))?])
     }
 
     fn raw_issue_asset<B: AsRef<[u8]>>(
@@ -422,10 +397,7 @@ pub trait RpcApi: Sized {
         raw_tx: B,
         issuances: &[json::RawIssuanceDetails],
     ) -> Result<json::IssueAssetResult> {
-        self.call(
-            "rawissueasset",
-            &[into_json_hex(raw_tx)?, into_json(issuances)?],
-        )
+        self.call("rawissueasset", &[into_json_hex(raw_tx)?, into_json(issuances)?])
     }
 
     fn raw_reissue_asset<B: AsRef<[u8]>>(
@@ -433,10 +405,7 @@ pub trait RpcApi: Sized {
         raw_tx: B,
         issuances: &[json::RawReissuanceDetails],
     ) -> Result<json::RawReissueAssetResult> {
-        self.call(
-            "rawreissueasset",
-            &[into_json_hex(raw_tx)?, into_json(issuances)?],
-        )
+        self.call("rawreissueasset", &[into_json_hex(raw_tx)?, into_json(issuances)?])
     }
 
     fn dump_asset_labels(&self) -> Result<HashMap<String, AssetId>> {
@@ -449,11 +418,8 @@ pub trait RpcApi: Sized {
         amount: Amount,
         comment: Option<&str>,
     ) -> Result<sha256d::Hash> {
-        let mut args = [
-            into_json(asset)?,
-            into_json(ser_amount(&amount))?,
-            opt_into_json(comment)?,
-        ];
+        let mut args =
+            [into_json(asset)?, into_json(ser_amount(&amount))?, opt_into_json(comment)?];
         self.call("destropamount", handle_defaults(&mut args, &[null()]))
     }
 
@@ -500,17 +466,13 @@ pub trait RpcApi: Sized {
         input_asset_blinding_factors: &[B],
         ignore_blind_fail: Option<bool>,
     ) -> Result<elements::Transaction> {
-        let amount_bfs: Result<Vec<serde_json::Value>> = input_amount_blinding_factors
-            .into_iter()
-            .map(into_json_hex)
-            .collect();
+        let amount_bfs: Result<Vec<serde_json::Value>> =
+            input_amount_blinding_factors.into_iter().map(into_json_hex).collect();
         let amounts: Vec<serde_json::Value> = input_amounts.into_iter().map(ser_amount).collect();
         let assets: Result<Vec<serde_json::Value>> =
             input_assets.into_iter().map(into_json).collect();
-        let asset_bfs: Result<Vec<serde_json::Value>> = input_asset_blinding_factors
-            .into_iter()
-            .map(into_json_hex)
-            .collect();
+        let asset_bfs: Result<Vec<serde_json::Value>> =
+            input_asset_blinding_factors.into_iter().map(into_json_hex).collect();
         let mut args = [
             into_json_hex(raw_tx)?,
             into_json(amount_bfs?)?,
@@ -519,10 +481,8 @@ pub trait RpcApi: Sized {
             into_json(asset_bfs?)?,
             opt_into_json(ignore_blind_fail)?,
         ];
-        let hex: String = self.call(
-            "rawblindrawtransaction",
-            handle_defaults(&mut args, &[null()]),
-        )?;
+        let hex: String =
+            self.call("rawblindrawtransaction", handle_defaults(&mut args, &[null()]))?;
         let bytes = hex::decode(hex)?;
         Ok(encode::deserialize(&bytes)?)
     }
@@ -554,10 +514,7 @@ pub trait RpcApi: Sized {
     }
 
     fn import_master_blinding_key(&self, master_blinding_key: SecretKey) -> Result<()> {
-        self.call(
-            "importmasterblindingkey",
-            &[master_blinding_key.to_string().into()],
-        )
+        self.call("importmasterblindingkey", &[master_blinding_key.to_string().into()])
     }
 
     fn dump_issuance_blinding_key(&self, txid: sha256d::Hash, vin: u32) -> Result<SecretKey> {
@@ -572,11 +529,7 @@ pub trait RpcApi: Sized {
         vin: u32,
         blinding_key: SecretKey,
     ) -> Result<()> {
-        let args = [
-            into_json(txid)?,
-            vin.into(),
-            blinding_key.to_string().into(),
-        ];
+        let args = [into_json(txid)?, vin.into(), blinding_key.to_string().into()];
         self.call("importissuanceblindingkey", &args)
     }
 
@@ -596,10 +549,7 @@ pub trait RpcApi: Sized {
         block: elements::Block,
         signatures: &[&json::SignedBlockSignature],
     ) -> Result<json::CombineBlockSigsResult> {
-        let args = [
-            into_json_hex(encode::serialize(&block))?,
-            into_json(signatures)?,
-        ];
+        let args = [into_json_hex(encode::serialize(&block))?, into_json(signatures)?];
         self.call("combineblocksigs", &args)
     }
 
@@ -608,10 +558,8 @@ pub trait RpcApi: Sized {
         block: elements::Block,
         accept_non_standard: Option<bool>,
     ) -> Result<()> {
-        let mut args = [
-            into_json_hex(encode::serialize(&block))?,
-            opt_into_json(accept_non_standard)?,
-        ];
+        let mut args =
+            [into_json_hex(encode::serialize(&block))?, opt_into_json(accept_non_standard)?];
         self.call("testproposedblock", handle_defaults(&mut args, &[null()]))
     }
 

@@ -170,11 +170,7 @@ pub struct GetRawTransationResultVinIssuance {
     pub isreissuance: bool,
     pub token: Option<AssetId>,
     pub asset: AssetId,
-    #[serde(
-        rename = "assetamount",
-        default,
-        deserialize_with = "deserialize_amount_opt"
-    )]
+    #[serde(rename = "assetamount", default, deserialize_with = "deserialize_amount_opt")]
     pub asset_amount: Option<Amount>,
     #[serde(rename = "assetamountcommitment", default, with = "serde_hex::opt")]
     pub asset_amount_commitment: Option<Vec<u8>>,
@@ -231,11 +227,7 @@ pub struct GetRawTransactionResultVin {
     pub sequence: u32,
     #[serde(default, deserialize_with = "deserialize_hex_array_opt")]
     pub txinwitness: Option<Vec<Vec<u8>>>,
-    #[serde(
-        default,
-        rename = "pegin_witness",
-        deserialize_with = "deserialize_hex_array_opt"
-    )]
+    #[serde(default, rename = "pegin_witness", deserialize_with = "deserialize_hex_array_opt")]
     pub pegin_witness: Option<Vec<Vec<u8>>>,
     pub issuance: Option<GetRawTransationResultVinIssuance>,
 }
@@ -267,17 +259,9 @@ pub struct GetRawTransactionResultVoutScriptPubKey {
 pub struct GetRawTransactionResultVout {
     #[serde(default, deserialize_with = "deserialize_amount_opt")]
     pub value: Option<Amount>,
-    #[serde(
-        rename = "ct-minimum",
-        default,
-        deserialize_with = "deserialize_amount_opt"
-    )]
+    #[serde(rename = "ct-minimum", default, deserialize_with = "deserialize_amount_opt")]
     pub value_minimum: Option<Amount>,
-    #[serde(
-        rename = "ct-maximum",
-        default,
-        deserialize_with = "deserialize_amount_opt"
-    )]
+    #[serde(rename = "ct-maximum", default, deserialize_with = "deserialize_amount_opt")]
     pub value_maximum: Option<Amount>,
     #[serde(rename = "ct-exponent")]
     pub ct_exponent: i64,
@@ -324,22 +308,13 @@ pub struct GetRawTransactionResult {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListUnspentQueryOptions {
-    #[serde(
-        serialize_with = "serialize_amount_opt",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(serialize_with = "serialize_amount_opt", skip_serializing_if = "Option::is_none")]
     pub minimum_amount: Option<Amount>,
-    #[serde(
-        serialize_with = "serialize_amount_opt",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(serialize_with = "serialize_amount_opt", skip_serializing_if = "Option::is_none")]
     pub maximum_amount: Option<Amount>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub maximum_count: Option<usize>,
-    #[serde(
-        serialize_with = "serialize_amount_opt",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(serialize_with = "serialize_amount_opt", skip_serializing_if = "Option::is_none")]
     pub maximum_sum_amount: Option<Amount>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub asset: Option<String>,
@@ -517,11 +492,7 @@ pub struct ListIssuancesResult {
 
     // no reissuance issuance
     pub token: Option<AssetId>,
-    #[serde(
-        rename = "tokenamount",
-        default,
-        deserialize_with = "deserialize_amount_opt"
-    )]
+    #[serde(rename = "tokenamount", default, deserialize_with = "deserialize_amount_opt")]
     pub token_amount: Option<Amount>,
     #[serde(rename = "tokenblinds", default, with = "serde_hex::opt")]
     pub token_blinding_factor: Option<Vec<u8>>,
