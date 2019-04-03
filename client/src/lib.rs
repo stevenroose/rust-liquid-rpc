@@ -265,8 +265,12 @@ pub trait RpcApi: Sized {
         self.call("listunspent", handle_defaults(&mut args, &defaults))
     }
 
-    fn get_new_address(&self, address_type: Option<btcjson::AddressType>) -> Result<String> {
-        self.call("getnewaddress", &["".into(), opt_into_json(address_type)?])
+    fn get_new_address(
+        &self,
+        label: Option<&str>,
+        address_type: Option<btcjson::AddressType>,
+    ) -> Result<String> {
+        self.call("getnewaddress", &[opt_into_json(label)?, opt_into_json(address_type)?])
     }
 
     fn get_address_info(&self, address: &str) -> Result<json::GetAddressInfoResult> {
