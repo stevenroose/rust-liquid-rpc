@@ -1,0 +1,31 @@
+[package]
+name = "liquid-rpc"
+version = "0.1.0"
+authors = ["Steven Roose <steven@stevenroose.org>"]
+description = "RPC client library for the Liquid JSON-RPC API."
+license = "CC0-1.0"
+homepage = "https://github.com/stevenroose/rust-liquid-rpc/"
+repository = "https://github.com/stevenroose/rust-liquid-rpc/"
+documentation = "https://docs.rs/liquid-rpc/"
+keywords = [ "bitcoin", "liquid", "elements", "blockstream" ]
+readme = "README.md"
+
+[lib]
+name = "liquid_rpc"
+path = "src/lib.rs"
+
+[dependencies]
+liquid-rpc-json = { version = "0.1.0", path = "../json" }
+bitcoincore-rpc = "0.3"
+
+jsonrpc = "0.10"
+
+serde_json = "1.0.39"
+serde = { version = "1.0.89", features = [ "derive" ] }
+hex = "0.3.2"
+
+bitcoin = "0.18.0"
+elements = { version = "0.7.0", features = [ "serde-feature" ] }
+bitcoin_hashes = "0.3.0"
+bitcoin-amount = { version = "0.1.4" }
+secp256k1 = { version = "0.12", features = [ "serde" ] }
