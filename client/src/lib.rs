@@ -141,7 +141,7 @@ fn handle_defaults<'a, 'b>(
 }
 
 /// Trait implementing the Liquid RPC commands.
-pub trait LiquidRpc: Sized {
+pub trait RpcApi: Sized {
     fn call<T: for<'a> serde::de::Deserialize<'a>>(
         &self,
         cmd: &str,
@@ -629,26 +629,26 @@ pub trait LiquidRpc: Sized {
 /// A Liquid RPC client.
 ///
 /// This type implements both the [bitcoincore_rpc::RpcApi] trait as the
-/// [liquid_rpc::LiquidRpc] trait.  Methods that are shared between Liquid and
+/// [liquid_rpc::RpcApi] trait.  Methods that are shared between Liquid and
 /// Bitcoin Core can be used from the former and changed or new methods are
 /// provided by the latter.
-pub struct LiquidClient(bitcoincore_rpc::Client);
+pub struct Client(bitcoincore_rpc::Client);
 
-impl LiquidClient {
+impl Client {
     /// Creates a client to a liquidd JSON-RPC server.
     pub fn new(url: String, user: Option<String>, pass: Option<String>) -> Self {
         debug_assert!(pass.is_none() || user.is_some());
 
-        LiquidClient(bitcoincore_rpc::Client::new(url, user, pass))
+        Client(bitcoincore_rpc::Client::new(url, user, pass))
     }
 
-    /// Create a new LiquidClient.
+    /// Create a new Client.
     pub fn from_jsonrpc(client: jsonrpc::client::Client) -> Self {
-        LiquidClient(bitcoincore_rpc::Client::from_jsonrpc(client))
+        Client(bitcoincore_rpc::Client::from_jsonrpc(client))
     }
 }
 
-impl bitcoincore_rpc::RpcApi for LiquidClient {
+impl bitcoincore_rpc::RpcApi for Client {
     fn call<T: for<'a> serde::de::Deserialize<'a>>(
         &self,
         cmd: &str,
@@ -658,7 +658,7 @@ impl bitcoincore_rpc::RpcApi for LiquidClient {
     }
 }
 
-impl LiquidRpc for LiquidClient {
+impl RpcApi for Client {
     fn call<T: for<'a> serde::de::Deserialize<'a>>(
         &self,
         cmd: &str,
