@@ -480,8 +480,8 @@ pub mod serde {
         //! Serialize and deserialize [Amount] as real numbers denominated in satoshi.
         //! Use with `#[serde(with = "amount::serde::as_sat")]`.
 
+        use amount::Amount;
         use serde::{Deserialize, Deserializer, Serialize, Serializer};
-        use ::amount::Amount;
 
         pub fn serialize<S: Serializer>(a: &Amount, s: S) -> Result<S::Ok, S::Error> {
             i64::serialize(&a.as_sat(), s)
@@ -495,8 +495,8 @@ pub mod serde {
             //! Serialize and deserialize [Optoin<Amount>] as real numbers denominated in satoshi.
             //! Use with `#[serde(default, with = "amount::serde::as_sat::opt")]`.
 
+            use amount::Amount;
             use serde::{Deserialize, Deserializer, Serializer};
-            use ::amount::Amount;
 
             pub fn serialize<S: Serializer>(a: &Option<Amount>, s: S) -> Result<S::Ok, S::Error> {
                 match *a {
@@ -515,8 +515,8 @@ pub mod serde {
         //! Serialize and deserialize [Amount] as JSON numbers denominated in BTC.
         //! Use with `#[serde(with = "amount::serde::as_btc")]`.
 
+        use amount::{Amount, Denomination};
         use serde::{Deserialize, Deserializer, Serialize, Serializer};
-        use ::amount::{Amount, Denomination};
 
         pub fn serialize<S: Serializer>(a: &Amount, s: S) -> Result<S::Ok, S::Error> {
             f64::serialize(&a.as_float_denom(Denomination::Bitcoin), s)
@@ -530,8 +530,8 @@ pub mod serde {
             //! Serialize and deserialize [Option<Amount>] as JSON numbers denominated in BTC.
             //! Use with `#[serde(default, with = "amount::serde::as_btc::opt")]`.
 
+            use amount::{Amount, Denomination};
             use serde::{Deserialize, Deserializer, Serializer};
-            use ::amount::{Amount, Denomination};
 
             pub fn serialize<S: Serializer>(a: &Option<Amount>, s: S) -> Result<S::Ok, S::Error> {
                 match *a {
@@ -783,4 +783,3 @@ mod tests {
         assert_eq!(without, serde_json::from_value(value_without).unwrap());
     }
 }
-

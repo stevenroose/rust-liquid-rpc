@@ -28,8 +28,8 @@ extern crate serde_json;
 
 pub extern crate liquid_rpc_json;
 pub use bitcoincore_rpc::json as btcjson;
-pub use liquid_rpc_json as json;
 use json::Amount;
+pub use liquid_rpc_json as json;
 
 use std::collections::HashMap;
 
@@ -238,7 +238,7 @@ pub trait LiquidRpcApi: Sized {
             opt_into_json(replaceable)?,
             opt_into_json(assets)?,
         ];
-        let defaults = [into_json(0i64)?, null(), null()];
+        let defaults = [into_json(0i64)?, false.into(), null()];
         self.call("createrawtransaction", handle_defaults(&mut args, &defaults))
     }
 
@@ -307,7 +307,8 @@ pub trait LiquidRpcApi: Sized {
             opt_into_json(min_confirmations)?,
             opt_into_json(include_watch_only)?,
         ];
-        self.call("getbalance", handle_defaults(&mut args, &[null(), null()])).map(convert_balances)
+        self.call("getbalance", handle_defaults(&mut args, &[0.into(), null()]))
+            .map(convert_balances)
     }
 
     fn get_balance_asset(
@@ -322,7 +323,8 @@ pub trait LiquidRpcApi: Sized {
             opt_into_json(include_watch_only)?,
             opt_into_json(Some(asset_label))?,
         ];
-        self.call("getbalance", handle_defaults(&mut args, &[null(), null(), null()])).map(deser_amount)
+        self.call("getbalance", handle_defaults(&mut args, &[0.into(), false.into(), null()]))
+            .map(deser_amount)
     }
 
     fn get_unconfirmed_balance(&self) -> Result<HashMap<String, Amount>> {
@@ -335,7 +337,8 @@ pub trait LiquidRpcApi: Sized {
         min_confirmations: Option<u32>,
     ) -> Result<HashMap<String, Amount>> {
         let mut args = [address.into(), opt_into_json(min_confirmations)?];
-        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null()])).map(convert_balances)
+        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null()]))
+            .map(convert_balances)
     }
 
     fn get_received_by_address_asset(
@@ -346,7 +349,8 @@ pub trait LiquidRpcApi: Sized {
     ) -> Result<Amount> {
         let mut args =
             [address.into(), opt_into_json(min_confirmations)?, opt_into_json(Some(asset_label))?];
-        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null(), null()])).map(deser_amount)
+        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[0.into(), null()]))
+            .map(deser_amount)
     }
 
     // TODO(stevenroose)
