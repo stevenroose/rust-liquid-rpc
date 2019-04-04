@@ -271,7 +271,19 @@ pub trait LiquidRpcApi: Sized {
             opt_into_json(include_unsafe)?,
             opt_into_json(query_options)?,
         ];
-        let defaults = [into_json(0)?, into_json(9999999)?, null(), into_json(true)?, null()];
+        let defaults = [0.into(), 9999999.into(), empty(), true.into(), null()];
+        self.call("listunspent", handle_defaults(&mut args, &defaults))
+    }
+
+    fn list_transactions(
+        &self,
+        count: Option<usize>,
+        skip: Option<usize>,
+        include_watch_only: Option<bool>,
+    ) -> Result<Vec<json::ListTransactionsResultEntry>> {
+        let mut args =
+            [opt_into_json(count)?, opt_into_json(skip)?, opt_into_json(include_watch_only)?];
+        let defaults = [10.into(), 0.into(), null()];
         self.call("listunspent", handle_defaults(&mut args, &defaults))
     }
 

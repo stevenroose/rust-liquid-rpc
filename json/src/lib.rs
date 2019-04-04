@@ -29,6 +29,7 @@ pub mod amount;
 pub use amount::Amount;
 
 use std::result;
+use std::collections::HashMap;
 
 use bitcoin::consensus::encode;
 use bitcoin::{PublicKey, Script};
@@ -308,6 +309,59 @@ pub struct ListUnspentResultEntry {
     pub amount_blinding_factor: Vec<u8>,
     #[serde(rename = "assetblinder", with = "serde_hex")]
     pub asset_blinding_factor: Vec<u8>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ListTransactionsResultEntryCategory {
+    Send,
+    Receive,
+    Orphan,
+    Immature,
+    Generate,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+pub struct ListTransactionsResultEntry {
+    #[serde(default, rename = "involvesWatchonly")]
+    pub involves_watch_only: bool,
+    pub category: ListTransactionsResultEntryCategory,
+    #[serde(with = "amount::serde::as_btc")]
+    pub amount: Amount,
+    pub asset: AssetId,
+    #[serde(rename = "amountblinder", with = "serde_hex")]
+    pub amount_blinding_factor: Vec<u8>,
+    #[serde(rename = "assetblinder", with = "serde_hex")]
+    pub asset_blinding_factor: Vec<u8>,
+    pub label: Option<String>,
+    pub vout: u32,
+    #[serde(default, with = "amount::serde::as_btc::opt")]
+    pub fee: Option<Amount>,
+    #[serde(default)]
+    pub abandoned: bool,
+    //
+    pub confirmations: u32,
+    #[serde(default)]
+    pub generated: bool,
+    #[serde(rename = "blockhash")]
+    pub block_hash: Option<sha256d::Hash>,
+    #[serde(rename = "blockindex")]
+    pub block_index: Option<u32>,
+    #[serde(rename = "blocktime")]
+    pub block_time: Option<u64>,
+    #[serde(default)]
+    pub trusted: bool,
+    pub txid: sha256d::Hash,
+    #[serde(rename = "walletconflicts")]
+    pub wallet_conflicts: Vec<sha256d::Hash>,
+    pub time: u64,
+    #[serde(rename = "timereceived")]
+    pub time_received: u64,
+    #[serde(rename = "bip125-replaceable")]
+    pub bip125_replaceable: bitcoincore_rpc::json::Bip125Replaceable,
+    /// Extra fields that are not well-defined.
+    #[serde(flatten)]
+    pub extra_info: HashMap<String, String>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
