@@ -24,8 +24,7 @@ serde_json = "1.0.39"
 serde = { version = "1.0.89", features = [ "derive" ] }
 hex = "0.3.2"
 
-bitcoin = "0.18.0"
+bitcoin = { version = "0.18", features = [ "use-serde" ] }
 elements = { version = "0.7.0", features = [ "serde-feature" ] }
 bitcoin_hashes = "0.3.0"
-bitcoin-amount = { version = "0.1.4" }
 secp256k1 = { version = "0.12", features = [ "serde" ] }

@@ -17,7 +17,6 @@
 #![crate_type = "rlib"]
 
 extern crate bitcoin;
-extern crate bitcoin_amount;
 extern crate bitcoin_hashes;
 extern crate bitcoincore_rpc;
 extern crate elements;
@@ -30,13 +29,13 @@ extern crate serde_json;
 pub extern crate liquid_rpc_json;
 pub use bitcoincore_rpc::json as btcjson;
 pub use liquid_rpc_json as json;
+use json::Amount;
 
 use std::collections::HashMap;
 
 use bitcoin::consensus::encode;
 use bitcoin::util::bip32;
 use bitcoin::{PublicKey, Script};
-use bitcoin_amount::Amount;
 use bitcoin_hashes::sha256d;
 use bitcoincore_rpc::Result;
 use secp256k1::SecretKey;
@@ -45,8 +44,19 @@ use json::AssetId;
 
 /// Serialize an amount returned by the RPC.
 fn ser_amount(amount: &Amount) -> serde_json::Value {
-    //TODO(stevenroose) THIS IS WRONG, NEED OTHER AMOUNT TYPE OR EXACT CONVERSION
-    (amount.clone().into_inner() as f64).into()
+    amount.as_float_denom(json::amount::Denomination::Bitcoin).into()
+}
+
+fn deser_amount(val: serde_json::Value) -> Amount {
+    Amount::from_float_denom(val.as_f64().unwrap(), json::amount::Denomination::Bitcoin)
+}
+
+fn convert_balances(balances: HashMap<String, serde_json::Value>) -> HashMap<String, Amount> {
+    let mut ret = HashMap::new();
+    for (k, v) in balances.into_iter() {
+        ret.insert(k, deser_amount(v));
+    }
+    ret
 }
 
 // tmp bitcoincore_rpc utils
@@ -297,7 +307,7 @@ pub trait LiquidRpcApi: Sized {
             opt_into_json(min_confirmations)?,
             opt_into_json(include_watch_only)?,
         ];
-        self.call("getbalance", handle_defaults(&mut args, &[null(), null()]))
+        self.call("getbalance", handle_defaults(&mut args, &[null(), null()])).map(convert_balances)
     }
 
     fn get_balance_asset(
@@ -312,11 +322,11 @@ pub trait LiquidRpcApi: Sized {
             opt_into_json(include_watch_only)?,
             opt_into_json(Some(asset_label))?,
         ];
-        self.call("getbalance", handle_defaults(&mut args, &[null(), null(), null()]))
+        self.call("getbalance", handle_defaults(&mut args, &[null(), null(), null()])).map(deser_amount)
     }
 
     fn get_unconfirmed_balance(&self) -> Result<HashMap<String, Amount>> {
-        self.call("getunconfirmedbalance", handle_defaults(&mut [], &[]))
+        self.call("getunconfirmedbalance", handle_defaults(&mut [], &[])).map(convert_balances)
     }
 
     fn get_received_by_address(
@@ -325,7 +335,7 @@ pub trait LiquidRpcApi: Sized {
         min_confirmations: Option<u32>,
     ) -> Result<HashMap<String, Amount>> {
         let mut args = [address.into(), opt_into_json(min_confirmations)?];
-        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null()]))
+        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null()])).map(convert_balances)
     }
 
     fn get_received_by_address_asset(
@@ -336,7 +346,7 @@ pub trait LiquidRpcApi: Sized {
     ) -> Result<Amount> {
         let mut args =
             [address.into(), opt_into_json(min_confirmations)?, opt_into_json(Some(asset_label))?];
-        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null(), null()]))
+        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null(), null()])).map(deser_amount)
     }
 
     // TODO(stevenroose)

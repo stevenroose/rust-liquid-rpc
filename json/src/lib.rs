@@ -17,7 +17,6 @@
 #![crate_type = "rlib"]
 
 extern crate bitcoin;
-extern crate bitcoin_amount;
 extern crate bitcoin_hashes;
 extern crate bitcoincore_rpc;
 extern crate elements;
@@ -26,56 +25,18 @@ extern crate secp256k1;
 extern crate serde;
 extern crate serde_json;
 
+pub mod amount;
+pub use amount::Amount;
+
 use std::result;
 
 use bitcoin::consensus::encode;
 use bitcoin::{PublicKey, Script};
-use bitcoin_amount::Amount;
 use bitcoin_hashes::{sha256, sha256d};
 use bitcoincore_rpc::json::serde_hex;
 use bitcoincore_rpc::Result;
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
-
-fn serialize_amount<S>(amount: &Amount, serializer: S) -> result::Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    //TODO(stevenroose) THIS IS WRONG, NEED OTHER AMOUNT TYPE OR EXACT CONVERSION
-    let v: f64 = amount.clone().into_inner() as f64;
-    v.serialize(serializer)
-}
-
-fn serialize_amount_opt<S>(
-    amount: &Option<Amount>,
-    serializer: S,
-) -> result::Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    match amount {
-        None => serializer.serialize_none(),
-        Some(a) => serialize_amount(a, serializer),
-    }
-}
-
-/// deserialize_amount deserializes a BTC-denominated floating point Bitcoin amount into the
-/// Amount type.
-fn deserialize_amount<'de, D>(deserializer: D) -> result::Result<Amount, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    Ok(Amount::from_btc(f64::deserialize(deserializer)?))
-}
-
-/// deserialize_amount_opt deserializes a BTC-denominated floating point Bitcoin amount into an
-/// Option of the Amount type.
-fn deserialize_amount_opt<'de, D>(deserializer: D) -> result::Result<Option<Amount>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    Ok(Some(Amount::from_btc(f64::deserialize(deserializer)?)))
-}
 
 /// deserialize_hex_array_opt deserializes a vector of hex-encoded byte arrays.
 fn deserialize_hex_array_opt<'de, D>(
@@ -170,11 +131,11 @@ pub struct GetRawTransationResultVinIssuance {
     pub isreissuance: bool,
     pub token: Option<AssetId>,
     pub asset: AssetId,
-    #[serde(rename = "assetamount", default, deserialize_with = "deserialize_amount_opt")]
+    #[serde(rename = "assetamount", default, with = "amount::serde::as_btc::opt")]
     pub asset_amount: Option<Amount>,
     #[serde(rename = "assetamountcommitment", default, with = "serde_hex::opt")]
     pub asset_amount_commitment: Option<Vec<u8>>,
-    #[serde(rename = "tokenamount", deserialize_with = "deserialize_amount_opt")]
+    #[serde(rename = "tokenamount", default, with = "amount::serde::as_btc::opt")]
     pub token_amount: Option<Amount>,
     #[serde(rename = "tokenamountcommitment", default, with = "serde_hex::opt")]
     pub token_amount_commitment: Option<Vec<u8>>,
@@ -201,14 +162,14 @@ impl GetRawTransationResultVinIssuance {
                 a
             },
             amount: if let Some(amount) = self.asset_amount {
-                elements::confidential::Value::Explicit(amount.clone().into_inner() as u64)
+                elements::confidential::Value::Explicit(amount.as_sat() as u64)
             } else if let Some(ref commitment) = self.asset_amount_commitment {
                 encode::deserialize(&commitment)?
             } else {
                 return Err(encode::Error::ParseFailed("missing issuance amount info").into());
             },
             inflation_keys: if let Some(amount) = self.token_amount {
-                elements::confidential::Value::Explicit(amount.clone().into_inner() as u64)
+                elements::confidential::Value::Explicit(amount.as_sat() as u64)
             } else if let Some(ref commitment) = self.token_amount_commitment {
                 encode::deserialize(&commitment)?
             } else {
@@ -257,11 +218,11 @@ pub struct GetRawTransactionResultVoutScriptPubKey {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetRawTransactionResultVout {
-    #[serde(default, deserialize_with = "deserialize_amount_opt")]
+    #[serde(default, with = "amount::serde::as_btc::opt")]
     pub value: Option<Amount>,
-    #[serde(rename = "ct-minimum", default, deserialize_with = "deserialize_amount_opt")]
+    #[serde(rename = "ct-minimum", default, with = "amount::serde::as_btc::opt")]
     pub value_minimum: Option<Amount>,
-    #[serde(rename = "ct-maximum", default, deserialize_with = "deserialize_amount_opt")]
+    #[serde(rename = "ct-maximum", default, with = "amount::serde::as_btc::opt")]
     pub value_maximum: Option<Amount>,
     #[serde(rename = "ct-exponent")]
     pub ct_exponent: i64,
@@ -308,13 +269,13 @@ pub struct GetRawTransactionResult {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListUnspentQueryOptions {
-    #[serde(serialize_with = "serialize_amount_opt", skip_serializing_if = "Option::is_none")]
+    #[serde(default, with = "amount::serde::as_btc::opt")]
     pub minimum_amount: Option<Amount>,
-    #[serde(serialize_with = "serialize_amount_opt", skip_serializing_if = "Option::is_none")]
+    #[serde(default, with = "amount::serde::as_btc::opt")]
     pub maximum_amount: Option<Amount>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub maximum_count: Option<usize>,
-    #[serde(serialize_with = "serialize_amount_opt", skip_serializing_if = "Option::is_none")]
+    #[serde(default, with = "amount::serde::as_btc::opt")]
     pub maximum_sum_amount: Option<Amount>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub asset: Option<String>,
@@ -330,7 +291,7 @@ pub struct ListUnspentResultEntry {
     pub redeem_script: Option<Script>,
     pub witness_script: Option<Script>,
     pub script_pub_key: Script,
-    #[serde(deserialize_with = "deserialize_amount")]
+    #[serde(with = "amount::serde::as_btc")]
     pub amount: Amount,
     pub confirmations: usize,
     pub spendable: bool,
@@ -387,7 +348,7 @@ pub struct GetTxOutResult {
     pub coinbase: bool,
     #[serde(rename = "scriptPubKey")]
     pub script_pub_key: GetRawTransactionResultVoutScriptPubKey,
-    #[serde(default, deserialize_with = "deserialize_amount_opt")]
+    #[serde(default, with = "amount::serde::as_btc::opt")]
     pub value: Option<Amount>,
     #[serde(rename = "valuecommitment", default, with = "serde_hex::opt")]
     pub value_commitment: Option<Vec<u8>>,
@@ -483,7 +444,7 @@ pub struct ListIssuancesResult {
     #[serde(rename = "assetlabel")]
     pub asset_label: Option<String>,
     pub vin: u32,
-    #[serde(rename = "assetamount", deserialize_with = "deserialize_amount")]
+    #[serde(rename = "assetamount", with = "amount::serde::as_btc")]
     pub asset_amount: Amount,
     #[serde(rename = "assetblinds", with = "serde_hex")]
     pub asset_blinding_factor: Vec<u8>,
@@ -492,7 +453,7 @@ pub struct ListIssuancesResult {
 
     // no reissuance issuance
     pub token: Option<AssetId>,
-    #[serde(rename = "tokenamount", default, deserialize_with = "deserialize_amount_opt")]
+    #[serde(rename = "tokenamount", default, with = "amount::serde::as_btc::opt")]
     pub token_amount: Option<Amount>,
     #[serde(rename = "tokenblinds", default, with = "serde_hex::opt")]
     pub token_blinding_factor: Option<Vec<u8>>,
@@ -516,11 +477,11 @@ pub struct ReissueAssetResult {
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize)]
 pub struct RawIssuanceDetails {
-    #[serde(rename = "assetamount", serialize_with = "serialize_amount")]
+    #[serde(rename = "assetamount", with = "amount::serde::as_btc")]
     pub asset_amount: Amount,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub asset_address: Option<String>,
-    #[serde(rename = "assetamount", serialize_with = "serialize_amount")]
+    #[serde(rename = "assetamount", with = "amount::serde::as_btc")]
     pub token_amount: Amount,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token_address: Option<String>,
@@ -533,7 +494,7 @@ pub struct RawIssuanceDetails {
 #[derive(Clone, PartialEq, Eq, Debug, Serialize)]
 pub struct RawReissuanceDetails {
     pub input_index: u32,
-    #[serde(rename = "assetamount", serialize_with = "serialize_amount")]
+    #[serde(rename = "assetamount", with = "amount::serde::as_btc")]
     pub asset_amount: Amount,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub asset_address: Option<String>,
