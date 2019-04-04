@@ -312,7 +312,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn get_balance_asset(
         &self,
-        asset_label: String,
+        asset_label: &str,
         min_confirmations: Option<u32>,
         include_watch_only: Option<bool>,
     ) -> Result<Amount> {
@@ -331,7 +331,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn get_received_by_address(
         &self,
-        address: String,
+        address: &str,
         min_confirmations: Option<u32>,
     ) -> Result<HashMap<String, Amount>> {
         let mut args = [address.into(), opt_into_json(min_confirmations)?];
@@ -340,8 +340,8 @@ pub trait LiquidRpcApi: Sized {
 
     fn get_received_by_address_asset(
         &self,
-        address: String,
-        asset_label: String,
+        address: &str,
+        asset_label: &str,
         min_confirmations: Option<u32>,
     ) -> Result<Amount> {
         let mut args =
