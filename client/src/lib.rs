@@ -287,11 +287,63 @@ pub trait LiquidRpcApi: Sized {
         self.call("gettxout", handle_defaults(&mut args, &[null()]))
     }
 
-    // Liquid-only calls
+    fn get_balance(
+        &self,
+        min_confirmations: Option<u32>,
+        include_watch_only: Option<bool>,
+    ) -> Result<HashMap<String, Amount>> {
+        let mut args = [
+            "*".into(), // backwards compat dummy
+            opt_into_json(min_confirmations)?,
+            opt_into_json(include_watch_only)?,
+        ];
+        self.call("getbalance", handle_defaults(&mut args, &[null(), null()]))
+    }
+
+    fn get_balance_asset(
+        &self,
+        asset_label: String,
+        min_confirmations: Option<u32>,
+        include_watch_only: Option<bool>,
+    ) -> Result<Amount> {
+        let mut args = [
+            "*".into(), // backwards compat dummy
+            opt_into_json(min_confirmations)?,
+            opt_into_json(include_watch_only)?,
+            opt_into_json(Some(asset_label))?,
+        ];
+        self.call("getbalance", handle_defaults(&mut args, &[null(), null(), null()]))
+    }
+
+    fn get_unconfirmed_balance(&self) -> Result<HashMap<String, Amount>> {
+        self.call("getunconfirmedbalance", handle_defaults(&mut [], &[]))
+    }
+
+    fn get_received_by_address(
+        &self,
+        address: String,
+        min_confirmations: Option<u32>,
+    ) -> Result<HashMap<String, Amount>> {
+        let mut args = [address.into(), opt_into_json(min_confirmations)?];
+        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null()]))
+    }
+
+    fn get_received_by_address_asset(
+        &self,
+        address: String,
+        asset_label: String,
+        min_confirmations: Option<u32>,
+    ) -> Result<Amount> {
+        let mut args =
+            [address.into(), opt_into_json(min_confirmations)?, opt_into_json(Some(asset_label))?];
+        self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null(), null()]))
+    }
 
     // TODO(stevenroose)
     // sendmany
     // fundrawtransaction? hard.. not in upstream because hard
+
+    // Liquid-only calls
 
     fn get_sidechain_info(&self) -> Result<json::GetSidechainInfoResult> {
         self.call("getsidechaininfo", &[])
