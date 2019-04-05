@@ -151,6 +151,17 @@ fn handle_defaults<'a, 'b>(
     }
 }
 
+/// Convert a possible-null result into an Option.
+fn opt_result<T: for<'a> serde::de::Deserialize<'a>>(
+    result: serde_json::Value,
+) -> Result<Option<T>> {
+    if result == serde_json::Value::Null {
+        Ok(None)
+    } else {
+        Ok(serde_json::from_value(result)?)
+    }
+}
+
 /// Trait implementing the Liquid RPC commands.
 pub trait LiquidRpcApi: Sized {
     fn call<T: for<'a> serde::de::Deserialize<'a>>(
@@ -310,7 +321,7 @@ pub trait LiquidRpcApi: Sized {
         include_mempool: Option<bool>,
     ) -> Result<Option<json::GetTxOutResult>> {
         let mut args = [into_json(txid)?, vout.into(), opt_into_json(include_mempool)?];
-        self.call("gettxout", handle_defaults(&mut args, &[null()]))
+        self.call("gettxout", handle_defaults(&mut args, &[null()])).and_then(opt_result)
     }
 
     fn get_balance(
