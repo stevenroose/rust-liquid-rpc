@@ -27,9 +27,12 @@ extern crate serde;
 extern crate serde_json;
 
 pub extern crate liquid_rpc_json;
-pub use bitcoincore_rpc::json as btcjson;
-use json::Amount;
 pub use liquid_rpc_json as json;
+pub use json::Amount;
+pub use json::AssetId;
+
+pub use bitcoincore_rpc::json as btcjson;
+pub use bitcoincore_rpc::{Result, Error};
 
 use std::collections::HashMap;
 
@@ -37,10 +40,8 @@ use bitcoin::consensus::encode;
 use bitcoin::util::bip32;
 use bitcoin::{PublicKey, Script};
 use bitcoin_hashes::sha256d;
-use bitcoincore_rpc::Result;
 use secp256k1::SecretKey;
 
-use json::AssetId;
 
 /// Serialize an amount returned by the RPC.
 fn ser_amount(amount: &Amount) -> serde_json::Value {
