@@ -300,13 +300,14 @@ pub trait LiquidRpcApi: Sized {
         self.call("getaddressinfo", &[address.into()])
     }
 
-    fn get_txout(
+    fn get_tx_out(
         &self,
-        outpoint: elements::OutPoint,
+        txid: sha256d::Hash,
+        vout: u32,
         include_mempool: Option<bool>,
-    ) -> Result<json::GetTxOutResult> {
+    ) -> Result<Option<json::GetTxOutResult>> {
         let mut args =
-            [into_json(outpoint.txid)?, into_json(outpoint.vout)?, opt_into_json(include_mempool)?];
+            [into_json(txid)?, vout.into(), opt_into_json(include_mempool)?];
         self.call("gettxout", handle_defaults(&mut args, &[null()]))
     }
 

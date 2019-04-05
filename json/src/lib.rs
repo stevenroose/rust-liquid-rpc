@@ -337,8 +337,7 @@ pub struct ListTransactionsResultEntry {
     pub vout: u32,
     #[serde(default, with = "amount::serde::as_btc::opt")]
     pub fee: Option<Amount>,
-    #[serde(default)]
-    pub abandoned: bool,
+    pub abandoned: Option<bool>,
     //
     pub confirmations: u32,
     #[serde(default)]
