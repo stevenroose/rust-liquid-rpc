@@ -27,12 +27,12 @@ extern crate serde;
 extern crate serde_json;
 
 pub extern crate liquid_rpc_json;
-pub use liquid_rpc_json as json;
 pub use json::Amount;
 pub use json::AssetId;
+pub use liquid_rpc_json as json;
 
 pub use bitcoincore_rpc::json as btcjson;
-pub use bitcoincore_rpc::{Result, Error};
+pub use bitcoincore_rpc::{Error, Result};
 
 use std::collections::HashMap;
 
@@ -41,7 +41,6 @@ use bitcoin::util::bip32;
 use bitcoin::{PublicKey, Script};
 use bitcoin_hashes::sha256d;
 use secp256k1::SecretKey;
-
 
 /// Serialize an amount returned by the RPC.
 fn ser_amount(amount: &Amount) -> serde_json::Value {
@@ -282,10 +281,14 @@ pub trait LiquidRpcApi: Sized {
         skip: Option<usize>,
         include_watch_only: Option<bool>,
     ) -> Result<Vec<json::ListTransactionsResultEntry>> {
-        let mut args =
-            [opt_into_json(count)?, opt_into_json(skip)?, opt_into_json(include_watch_only)?];
+        let mut args = [
+            "*".into(),
+            opt_into_json(count)?,
+            opt_into_json(skip)?,
+            opt_into_json(include_watch_only)?,
+        ];
         let defaults = [10.into(), 0.into(), null()];
-        self.call("listunspent", handle_defaults(&mut args, &defaults))
+        self.call("listtransactions", handle_defaults(&mut args, &defaults))
     }
 
     fn get_new_address(
@@ -306,8 +309,7 @@ pub trait LiquidRpcApi: Sized {
         vout: u32,
         include_mempool: Option<bool>,
     ) -> Result<Option<json::GetTxOutResult>> {
-        let mut args =
-            [into_json(txid)?, vout.into(), opt_into_json(include_mempool)?];
+        let mut args = [into_json(txid)?, vout.into(), opt_into_json(include_mempool)?];
         self.call("gettxout", handle_defaults(&mut args, &[null()]))
     }
 

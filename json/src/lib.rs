@@ -28,8 +28,8 @@ extern crate serde_json;
 pub mod amount;
 pub use amount::Amount;
 
-use std::result;
 use std::collections::HashMap;
+use std::result;
 
 use bitcoin::consensus::encode;
 use bitcoin::{PublicKey, Script};
@@ -214,6 +214,16 @@ pub struct GetRawTransactionResultVoutScriptPubKey {
     pub pegout_req_sigs: Option<usize>,
     pub pegout_type: Option<String>, //TODO(stevenroose) consider enum
     pub pegout_addresses: Option<Vec<String>>,
+}
+
+impl GetRawTransactionResultVoutScriptPubKey {
+    pub fn script(&self) -> Script {
+        self.hex.clone().into()
+    }
+
+    pub fn is_pegout(&self) -> bool {
+        self.pegout_chain.is_some()
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
