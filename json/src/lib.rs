@@ -200,10 +200,10 @@ pub struct GetRawTransactionResultVoutScriptPubKey {
     #[serde(with = "serde_hex")]
     pub hex: Vec<u8>,
     #[serde(rename = "reqSigs")]
-    pub req_sigs: usize,
+    pub req_sigs: Option<usize>,
     #[serde(rename = "type")]
-    pub type_: String, //TODO(stevenroose) consider enum
-    pub addresses: Vec<String>,
+    pub type_: Option<String>, //TODO(stevenroose) consider enum
+    pub addresses: Option<Vec<String>>,
 
     #[serde(default, with = "serde_hex::opt")]
     pub pegout_chain: Option<Vec<u8>>,
@@ -236,9 +236,9 @@ pub struct GetRawTransactionResultVout {
     #[serde(rename = "ct-maximum", default, with = "amount::serde::as_btc::opt")]
     pub value_maximum: Option<Amount>,
     #[serde(rename = "ct-exponent")]
-    pub ct_exponent: i64,
+    pub ct_exponent: Option<i64>,
     #[serde(rename = "ct-bits")]
-    pub ct_bits: i64,
+    pub ct_bits: Option<i64>,
     #[serde(rename = "valuecommitment", default, with = "serde_hex::opt")]
     pub value_commitment: Option<Vec<u8>>,
     pub asset: Option<AssetId>,
@@ -275,6 +275,12 @@ pub struct GetRawTransactionResult {
     pub confirmations: usize,
     pub time: usize,
     pub blocktime: usize,
+}
+
+impl GetRawTransactionResult {
+    pub fn transaction(&self) -> Result<elements::Transaction> {
+        Ok(encode::deserialize(&self.hex)?)
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
@@ -336,6 +342,7 @@ pub struct ListTransactionsResultEntry {
     #[serde(default, rename = "involvesWatchonly")]
     pub involves_watch_only: bool,
     pub category: ListTransactionsResultEntryCategory,
+    pub address: Option<String>,
     #[serde(with = "amount::serde::as_btc")]
     pub amount: Amount,
     pub asset: AssetId,
