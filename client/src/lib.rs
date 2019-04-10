@@ -310,6 +310,10 @@ pub trait LiquidRpcApi: Sized {
         self.call("getnewaddress", &[opt_into_json(label)?, opt_into_json(address_type)?])
     }
 
+    fn validate_address(&self, address: &str) -> Result<json::ValidateAddressResult> {
+        self.call("validateaddress", &[address.into()])
+    }
+
     fn get_address_info(&self, address: &str) -> Result<json::GetAddressInfoResult> {
         self.call("getaddressinfo", &[address.into()])
     }

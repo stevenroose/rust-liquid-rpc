@@ -381,6 +381,32 @@ pub struct ListTransactionsResultEntry {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+pub struct ValidateAddressResultInfo {
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+pub struct ValidateAddressResult {
+    #[serde(rename = "isvalid")]
+    pub is_valid: bool,
+    #[serde(rename = "isvalid_parent")]
+    pub is_valid_parent: bool,
+
+    // Only provided when is_valid is true.
+    pub address: Option<String>,
+    #[serde(rename = "scriptPubKey")]
+    pub script_pub_key: Option<Script>,
+    #[serde(rename = "isscript")]
+    pub is_script: Option<bool>,
+    #[serde(rename = "iswitness")]
+    pub is_witness: Option<bool>,
+    pub witness_version: Option<u8>,
+    #[serde(default, with = "serde_hex::opt")]
+    pub witness_program: Option<Vec<u8>>,
+    pub confidential_key: Option<String>,
+    pub unconfidential: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct GetAddressInfoResult {
     pub address: String,
     #[serde(rename = "scriptPubKey")]
