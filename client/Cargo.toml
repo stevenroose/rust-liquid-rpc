@@ -16,9 +16,9 @@ path = "src/lib.rs"
 
 [dependencies]
 liquid-rpc-json = { version = "0.1.0", path = "../json" }
-bitcoincore-rpc = "0.3"
+bitcoincore-rpc = "0.4"
 
-jsonrpc = "0.10"
+jsonrpc = "0.11"
 
 serde_json = "1.0.39"
 serde = { version = "1.0.89", features = [ "derive" ] }

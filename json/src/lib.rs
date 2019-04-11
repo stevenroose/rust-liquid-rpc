@@ -33,11 +33,21 @@ use std::result;
 
 use bitcoin::consensus::encode;
 use bitcoin::{PublicKey, Script};
+use bitcoin_hashes::hex::FromHex;
 use bitcoin_hashes::{sha256, sha256d};
 use bitcoincore_rpc::json::serde_hex;
 use bitcoincore_rpc::Result;
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
+
+/// The hexadecimal representation of the Bitcoin pegged asset.
+pub const BITCOIN_ASSET_HEX: &'static str =
+    "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d";
+
+/// The [AssetId] of the Bitcoin pegged asset.
+pub fn bitcoin_asset() -> AssetId {
+    AssetId::from_hex(BITCOIN_ASSET_HEX).unwrap()
+}
 
 /// deserialize_hex_array_opt deserializes a vector of hex-encoded byte arrays.
 fn deserialize_hex_array_opt<'de, D>(
@@ -283,6 +293,46 @@ impl GetRawTransactionResult {
     }
 }
 
+#[derive(Serialize, Clone, PartialEq, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FundRawTransactionOptions {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change_address: Option<HashMap<AssetId, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change_position: Option<u32>,
+    #[serde(rename = "change_type", skip_serializing_if = "Option::is_none")]
+    pub change_type: Option<bitcoincore_rpc::json::AddressType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_watching: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lock_unspents: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fee_rate: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subtract_fee_from_outputs: Option<Vec<u32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub replaceable: Option<bool>,
+    #[serde(rename = "conf_target", skip_serializing_if = "Option::is_none")]
+    pub conf_target: Option<u32>,
+    #[serde(rename = "estimate_mode", skip_serializing_if = "Option::is_none")]
+    pub estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FundRawTransactionResult {
+    pub hex: Vec<u8>,
+    pub fee: u64,
+    #[serde(rename = "changepos")]
+    pub change_position: u32,
+}
+
+impl FundRawTransactionResult {
+    pub fn transaction(&self) -> Result<elements::Transaction> {
+        Ok(encode::deserialize(&self.hex)?)
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListUnspentQueryOptions {
@@ -378,10 +428,6 @@ pub struct ListTransactionsResultEntry {
     /// Extra fields that are not well-defined.
     #[serde(flatten)]
     pub extra_info: HashMap<String, String>,
-}
-
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
-pub struct ValidateAddressResultInfo {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]

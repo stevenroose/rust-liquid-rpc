@@ -27,8 +27,7 @@ extern crate serde;
 extern crate serde_json;
 
 pub extern crate liquid_rpc_json;
-pub use json::Amount;
-pub use json::AssetId;
+pub use json::{bitcoin_asset, Amount, AssetId, BITCOIN_ASSET_HEX};
 pub use liquid_rpc_json as json;
 
 pub use bitcoincore_rpc::json as btcjson;
@@ -58,8 +57,6 @@ fn convert_balances(balances: HashMap<String, serde_json::Value>) -> HashMap<Str
     }
     ret
 }
-
-// tmp bitcoincore_rpc utils
 
 /// Shorthand for converting a variable into a serde_json::Value.
 fn into_json<T>(val: T) -> Result<serde_json::Value>
@@ -101,6 +98,11 @@ fn null() -> serde_json::Value {
 /// Shorthand for an empty serde_json::Value array.
 fn empty() -> serde_json::Value {
     serde_json::Value::Array(vec![])
+}
+
+/// Shorthand for an empty serde_json object.
+fn empty_obj() -> serde_json::Value {
+    serde_json::Value::Object(Default::default())
 }
 
 /// Handle default values in the argument list
@@ -159,6 +161,41 @@ fn opt_result<T: for<'a> serde::de::Deserialize<'a>>(
         Ok(None)
     } else {
         Ok(serde_json::from_value(result)?)
+    }
+}
+
+/// Used to pass raw txs into the API.
+pub trait RawTx: Sized {
+    fn raw_hex(self) -> String;
+}
+
+impl<'a> RawTx for &'a elements::Transaction {
+    fn raw_hex(self) -> String {
+        hex::encode(bitcoin::consensus::encode::serialize(self))
+    }
+}
+
+impl<'a> RawTx for &'a [u8] {
+    fn raw_hex(self) -> String {
+        hex::encode(self)
+    }
+}
+
+impl<'a> RawTx for &'a Vec<u8> {
+    fn raw_hex(self) -> String {
+        hex::encode(self)
+    }
+}
+
+impl<'a> RawTx for &'a str {
+    fn raw_hex(self) -> String {
+        self.to_owned()
+    }
+}
+
+impl RawTx for String {
+    fn raw_hex(self) -> String {
+        self
     }
 }
 
@@ -265,6 +302,21 @@ pub trait LiquidRpcApi: Sized {
             self.create_raw_transaction_hex(utxos, outs, locktime, replaceable, assets)?;
         let bytes = hex::decode(hex)?;
         Ok(encode::deserialize(&bytes)?)
+    }
+
+    fn fund_raw_transaction<R: RawTx>(
+        &self,
+        tx: R,
+        options: Option<json::FundRawTransactionOptions>,
+        is_witness: Option<bool>,
+    ) -> Result<json::FundRawTransactionResult> {
+        let mut args = [tx.raw_hex().into(), opt_into_json(options)?, opt_into_json(is_witness)?];
+        let defaults = [empty_obj(), null()];
+        self.call("fundrawtransaction", handle_defaults(&mut args, &defaults))
+    }
+
+    fn send_raw_transaction<R: RawTx>(&self, tx: R) -> Result<sha256d::Hash> {
+        self.call("sendrawtransaction", handle_defaults(&mut [tx.raw_hex().into()], &[]))
     }
 
     fn list_unspent(
@@ -386,7 +438,6 @@ pub trait LiquidRpcApi: Sized {
 
     // TODO(stevenroose)
     // sendmany
-    // fundrawtransaction? hard.. not in upstream because hard
 
     // Liquid-only calls
 
@@ -398,28 +449,28 @@ pub trait LiquidRpcApi: Sized {
         self.call("getpeginaddress", &[])
     }
 
-    fn create_raw_pegin<B: AsRef<[u8]>>(
+    fn create_raw_pegin<R: bitcoincore_rpc::RawTx, B: AsRef<[u8]>>(
         &self,
-        raw_bitcoin_tx: B,
+        raw_bitcoin_tx: R,
         txout_proof: B,
         claim_script: Option<&Script>,
     ) -> Result<json::CreateRawPeginResult> {
         let mut args = [
-            into_json_hex(raw_bitcoin_tx)?,
+            raw_bitcoin_tx.raw_hex().into(),
             into_json_hex(txout_proof)?,
             opt_into_json_hex(claim_script.map(|s| s.as_bytes()))?,
         ];
         self.call("createrawpegin", handle_defaults(&mut args, &[null()]))
     }
 
-    fn claim_pegin<B: AsRef<[u8]>>(
+    fn claim_pegin<R: bitcoincore_rpc::RawTx, B: AsRef<[u8]>>(
         &self,
-        raw_bitcoin_tx: B,
+        raw_bitcoin_tx: R,
         txout_proof: B,
         claim_script: Option<&Script>,
     ) -> Result<sha256d::Hash> {
         let mut args = [
-            into_json_hex(raw_bitcoin_tx)?,
+            raw_bitcoin_tx.raw_hex().into(),
             into_json_hex(txout_proof)?,
             opt_into_json_hex(claim_script.map(|s| s.as_bytes()))?,
         ];
@@ -493,20 +544,20 @@ pub trait LiquidRpcApi: Sized {
         self.call("reissueasset", &[into_json(asset)?, into_json(ser_amount(&asset_amount))?])
     }
 
-    fn raw_issue_asset<B: AsRef<[u8]>>(
+    fn raw_issue_asset<R: RawTx>(
         &self,
-        raw_tx: B,
+        raw_tx: R,
         issuances: &[json::RawIssuanceDetails],
     ) -> Result<json::IssueAssetResult> {
-        self.call("rawissueasset", &[into_json_hex(raw_tx)?, into_json(issuances)?])
+        self.call("rawissueasset", &[raw_tx.raw_hex().into(), into_json(issuances)?])
     }
 
-    fn raw_reissue_asset<B: AsRef<[u8]>>(
+    fn raw_reissue_asset<R: RawTx>(
         &self,
-        raw_tx: B,
+        raw_tx: R,
         issuances: &[json::RawReissuanceDetails],
     ) -> Result<json::RawReissueAssetResult> {
-        self.call("rawreissueasset", &[into_json_hex(raw_tx)?, into_json(issuances)?])
+        self.call("rawreissueasset", &[raw_tx.raw_hex().into(), into_json(issuances)?])
     }
 
     fn dump_asset_labels(&self) -> Result<HashMap<String, AssetId>> {
@@ -524,9 +575,9 @@ pub trait LiquidRpcApi: Sized {
         self.call("destropamount", handle_defaults(&mut args, &[null()]))
     }
 
-    fn blind_raw_transaction<B: AsRef<[u8]>>(
+    fn blind_raw_transaction<R: RawTx, B: AsRef<[u8]>>(
         &self,
-        raw_tx: B,
+        raw_tx: R,
         ignore_blind_fail: Option<bool>,
         asset_commitments: Option<&[B]>,
         blind_issuances: Option<bool>,
@@ -538,7 +589,7 @@ pub trait LiquidRpcApi: Sized {
             })
             .transpose()?;
         let mut args = [
-            into_json_hex(raw_tx)?,
+            raw_tx.raw_hex().into(),
             opt_into_json(ignore_blind_fail)?,
             opt_into_json(commitments)?,
             opt_into_json(blind_issuances)?,
@@ -551,16 +602,16 @@ pub trait LiquidRpcApi: Sized {
         Ok(encode::deserialize(&bytes)?)
     }
 
-    fn unblind_raw_transaction<B: AsRef<[u8]>>(
+    fn unblind_raw_transaction<R: RawTx>(
         &self,
-        raw_tx: B,
+        raw_tx: R,
     ) -> Result<json::UnblindRawTransactionResult> {
-        self.call("unblindrawtransaction", &[into_json_hex(raw_tx)?])
+        self.call("unblindrawtransaction", &[raw_tx.raw_hex().into()])
     }
 
-    fn raw_blind_raw_transaction<B: AsRef<[u8]>>(
+    fn raw_blind_raw_transaction<R: RawTx, B: AsRef<[u8]>>(
         &self,
-        raw_tx: B,
+        raw_tx: R,
         input_amount_blinding_factors: &[B],
         input_amounts: &[Amount],
         input_assets: &[AssetId],
@@ -575,7 +626,7 @@ pub trait LiquidRpcApi: Sized {
         let asset_bfs: Result<Vec<serde_json::Value>> =
             input_asset_blinding_factors.into_iter().map(into_json_hex).collect();
         let mut args = [
-            into_json_hex(raw_tx)?,
+            raw_tx.raw_hex().into(),
             into_json(amount_bfs?)?,
             into_json(amounts)?,
             into_json(assets?)?,
