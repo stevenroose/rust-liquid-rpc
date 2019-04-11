@@ -329,7 +329,7 @@ pub trait LiquidRpcApi: Sized {
     fn sign_raw_transaction_with_key<R: RawTx>(
         &self,
         tx: R,
-        privkeys: &[PrivateKey],
+        privkeys: &[&PrivateKey],
         prevtxs: Option<&[json::SignRawTransactionInput]>,
         sighash_type: Option<bitcoincore_rpc::json::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
