@@ -75,8 +75,8 @@ pub type AssetId = sha256::Hash;
 #[serde(rename_all = "camelCase")]
 pub struct GetBlockHeaderResult {
     pub hash: sha256d::Hash,
-    pub confirmations: usize,
-    pub height: usize,
+    pub confirmations: u32,
+    pub height: u32,
     pub version: u32,
     #[serde(default, with = "serde_hex::opt")]
     pub version_hex: Option<Vec<u8>>,
@@ -282,7 +282,7 @@ pub struct GetRawTransactionResult {
     pub vin: Vec<GetRawTransactionResultVin>,
     pub vout: Vec<GetRawTransactionResultVout>,
     pub blockhash: sha256d::Hash,
-    pub confirmations: usize,
+    pub confirmations: u32,
     pub time: usize,
     pub blocktime: usize,
 }
@@ -392,7 +392,7 @@ pub struct ListUnspentResultEntry {
     pub script_pub_key: Script,
     #[serde(with = "amount::serde::as_btc")]
     pub amount: Amount,
-    pub confirmations: usize,
+    pub confirmations: u32,
     pub spendable: bool,
     pub solvable: bool,
     #[serde(rename = "desc")]
@@ -438,7 +438,7 @@ pub struct ListTransactionsResultEntry {
     pub fee: Option<Amount>,
     pub abandoned: Option<bool>,
     //
-    pub confirmations: u32,
+    pub confirmations: i32,
     #[serde(default)]
     pub generated: bool,
     #[serde(rename = "blockhash")]
