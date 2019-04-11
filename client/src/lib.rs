@@ -37,7 +37,7 @@ use std::collections::HashMap;
 
 use bitcoin::consensus::encode;
 use bitcoin::util::bip32;
-use bitcoin::{PublicKey, Script};
+use bitcoin::{PublicKey, PrivateKey, Script};
 use bitcoin_hashes::sha256d;
 use secp256k1::SecretKey;
 
@@ -313,6 +313,34 @@ pub trait LiquidRpcApi: Sized {
         let mut args = [tx.raw_hex().into(), opt_into_json(options)?, opt_into_json(is_witness)?];
         let defaults = [empty_obj(), null()];
         self.call("fundrawtransaction", handle_defaults(&mut args, &defaults))
+    }
+
+    fn sign_raw_transaction_with_wallet<R: RawTx>(
+        &self,
+        tx: R,
+        utxos: Option<&[json::SignRawTransactionInput]>,
+        sighash_type: Option<bitcoincore_rpc::json::SigHashType>,
+    ) -> Result<json::SignRawTransactionResult> {
+        let mut args = [tx.raw_hex().into(), opt_into_json(utxos)?, opt_into_json(sighash_type)?];
+        let defaults = [empty(), null()];
+        self.call("signrawtransactionwithwallet", handle_defaults(&mut args, &defaults))
+    }
+
+    fn sign_raw_transaction_with_key<R: RawTx>(
+        &self,
+        tx: R,
+        privkeys: &[PrivateKey],
+        prevtxs: Option<&[json::SignRawTransactionInput]>,
+        sighash_type: Option<bitcoincore_rpc::json::SigHashType>,
+    ) -> Result<json::SignRawTransactionResult> {
+        let mut args = [
+            tx.raw_hex().into(),
+            into_json(privkeys)?,
+            opt_into_json(prevtxs)?,
+            opt_into_json(sighash_type)?,
+        ];
+        let defaults = [empty(), null()];
+        self.call("signrawtransactionwithkey", handle_defaults(&mut args, &defaults))
     }
 
     fn send_raw_transaction<R: RawTx>(&self, tx: R) -> Result<sha256d::Hash> {

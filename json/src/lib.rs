@@ -334,6 +334,36 @@ impl FundRawTransactionResult {
     }
 }
 
+#[derive(Serialize, Clone, PartialEq, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SignRawTransactionInput {
+    pub txid: sha256d::Hash,
+    pub vout: u32,
+    pub script_pub_key: Script,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub redeem_script: Option<Script>,
+    #[serde(default, with = "amount::serde::as_btc::opt", skip_serializing_if = "Option::is_none")]
+    pub amount: Option<Amount>,
+    #[serde(rename = "amountcommitment", default, with = "serde_hex::opt", skip_serializing_if = "Option::is_none")]
+    pub amount_commitment: Option<Vec<u8>>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SignRawTransactionResult {
+    #[serde(with = "serde_hex")]
+    pub hex: Vec<u8>,
+    pub complete: bool,
+    pub errors: Option<Vec<bitcoincore_rpc::json::SignRawTransactionResultError>>,
+    pub warning: Option<String>,
+}
+
+impl SignRawTransactionResult {
+    pub fn transaction(&self) -> Result<elements::Transaction> {
+        Ok(encode::deserialize(&self.hex)?)
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListUnspentQueryOptions {
