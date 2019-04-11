@@ -296,8 +296,8 @@ impl GetRawTransactionResult {
 #[derive(Serialize, Clone, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct FundRawTransactionOptions {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub change_address: Option<HashMap<AssetId, String>>,
+    #[serde(rename = "changeAddress", skip_serializing_if = "Option::is_none")]
+    pub change_address_map: Option<HashMap<AssetId, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub change_position: Option<u32>,
     #[serde(rename = "change_type", skip_serializing_if = "Option::is_none")]
