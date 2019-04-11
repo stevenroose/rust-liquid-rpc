@@ -321,6 +321,7 @@ pub struct FundRawTransactionOptions {
 #[derive(Deserialize, Clone, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct FundRawTransactionResult {
+    #[serde(with = "serde_hex")]
     pub hex: Vec<u8>,
     #[serde(with = "amount::serde::as_btc")]
     pub fee: Amount,
