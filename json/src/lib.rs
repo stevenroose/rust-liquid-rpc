@@ -345,7 +345,12 @@ pub struct SignRawTransactionInput {
     pub redeem_script: Option<Script>,
     #[serde(default, with = "amount::serde::as_btc::opt", skip_serializing_if = "Option::is_none")]
     pub amount: Option<Amount>,
-    #[serde(rename = "amountcommitment", default, with = "serde_hex::opt", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "amountcommitment",
+        default,
+        with = "serde_hex::opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub amount_commitment: Option<Vec<u8>>,
 }
 
