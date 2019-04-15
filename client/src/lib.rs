@@ -31,11 +31,9 @@ pub use json::{bitcoin_asset, Amount, AssetId, BITCOIN_ASSET_HEX};
 pub use liquid_rpc_json as json;
 
 pub use bitcoincore_rpc::json as btcjson;
-pub use bitcoincore_rpc::{Error, Result};
+pub use bitcoincore_rpc::{Auth, Error, Result};
 
 use std::collections::HashMap;
-use std::fs::File;
-use std::{io, result};
 
 use bitcoin::consensus::encode;
 use bitcoin::util::bip32;
@@ -198,33 +196,6 @@ impl<'a> RawTx for &'a str {
 impl RawTx for String {
     fn raw_hex(self) -> String {
         self
-    }
-}
-
-/// The different authentication methods for the client.
-pub enum Auth<'a> {
-    //TODO(stevenroose) remove this and re-export bitcoincore_rpc::Auth
-    // once it's merged there: https://github.com/rust-bitcoin/rust-bitcoincore-rpc/pull/39
-    None,
-    UserPass(String, String),
-    CookieFile(&'a str),
-}
-
-impl<'a> Auth<'a> {
-    /// Convert into the arguments that jsonrpc::Client needs.
-    fn get_user_pass(self) -> result::Result<(Option<String>, Option<String>), io::Error> {
-        use std::io::Read;
-        match self {
-            Auth::None => Ok((None, None)),
-            Auth::UserPass(u, p) => Ok((Some(u), Some(p))),
-            Auth::CookieFile(path) => {
-                let mut file = File::open(path)?;
-                let mut contents = String::new();
-                file.read_to_string(&mut contents)?;
-                let mut split = contents.splitn(2, ":");
-                Ok((Some(split.next().unwrap().into()), Some(split.next().unwrap_or("").into())))
-            }
-        }
     }
 }
 
@@ -793,9 +764,8 @@ pub struct Client(bitcoincore_rpc::Client);
 
 impl Client {
     /// Creates a client to a liquidd JSON-RPC server.
-    pub fn new(url: String, auth: Auth) -> result::Result<Self, io::Error> {
-        let (user, pass) = auth.get_user_pass()?;
-        Ok(Client(bitcoincore_rpc::Client::new(url, user, pass)))
+    pub fn new(url: String, auth: Auth) -> Result<Self> {
+        bitcoincore_rpc::Client::new(url, auth).map(Client)
     }
 
     /// Create a new Client.
