@@ -469,6 +469,14 @@ pub struct ListTransactionsResultEntry {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+pub struct ListSinceBlockResult {
+    pub transactions: Vec<ListTransactionsResultEntry>,
+    pub removed: Option<Vec<ListTransactionsResultEntry>>,
+    #[serde(rename = "lastblock")]
+    pub last_block: sha256d::Hash,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct ValidateAddressResult {
     #[serde(rename = "isvalid")]
     pub is_valid: bool,

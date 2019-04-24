@@ -388,7 +388,7 @@ pub trait LiquidRpcApi: Sized {
         target_confirmations: Option<u32>,
         include_watch_only: Option<bool>,
         include_removed: Option<bool>,
-    ) -> Result<Vec<json::ListTransactionsResultEntry>> {
+    ) -> Result<json::ListSinceBlockResult> {
         let mut args = [
             opt_into_json(block_hash)?,
             opt_into_json(target_confirmations)?,
