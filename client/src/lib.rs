@@ -384,7 +384,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn list_since_block(
         &self,
-        block_hash: Option<sha256d::Hash>,
+        block_hash: Option<&sha256d::Hash>,
         target_confirmations: Option<u32>,
         include_watch_only: Option<bool>,
         include_removed: Option<bool>,
@@ -417,7 +417,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn get_tx_out(
         &self,
-        txid: sha256d::Hash,
+        txid: &sha256d::Hash,
         vout: u32,
         include_mempool: Option<bool>,
     ) -> Result<Option<json::GetTxOutResult>> {
@@ -714,7 +714,7 @@ pub trait LiquidRpcApi: Sized {
         self.call("importmasterblindingkey", &[master_blinding_key.to_string().into()])
     }
 
-    fn dump_issuance_blinding_key(&self, txid: sha256d::Hash, vin: u32) -> Result<SecretKey> {
+    fn dump_issuance_blinding_key(&self, txid: &sha256d::Hash, vin: u32) -> Result<SecretKey> {
         let hex: String = self.call("dumpissuanceblindingkey", &[into_json(txid)?, vin.into()])?;
         let bytes = hex::decode(hex)?;
         Ok(SecretKey::from_slice(&bytes).map_err(encode::Error::Secp256k1)?)
@@ -722,7 +722,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn import_issuance_blinding_key(
         &self,
-        txid: sha256d::Hash,
+        txid: &sha256d::Hash,
         vin: u32,
         blinding_key: SecretKey,
     ) -> Result<()> {
