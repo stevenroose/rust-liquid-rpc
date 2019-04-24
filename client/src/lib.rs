@@ -382,6 +382,23 @@ pub trait LiquidRpcApi: Sized {
         self.call("listtransactions", handle_defaults(&mut args, &defaults))
     }
 
+    fn list_since_block(
+        &self,
+        block_hash: Option<sha256d::Hash>,
+        target_confirmations: Option<u32>,
+        include_watch_only: Option<bool>,
+        include_removed: Option<bool>,
+    ) -> Result<Vec<json::ListTransactionsResultEntry>> {
+        let mut args = [
+            opt_into_json(block_hash)?,
+            opt_into_json(target_confirmations)?,
+            opt_into_json(include_watch_only)?,
+            opt_into_json(include_removed)?,
+        ];
+        let defaults = ["".into(), 1.into(), false.into(), null()];
+        self.call("listsinceblock", handle_defaults(&mut args, &defaults))
+    }
+
     fn get_new_address(
         &self,
         label: Option<&str>,

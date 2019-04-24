@@ -463,6 +463,7 @@ pub struct ListTransactionsResultEntry {
     #[serde(rename = "bip125-replaceable")]
     pub bip125_replaceable: bitcoincore_rpc::json::Bip125Replaceable,
     /// Extra fields that are not well-defined.
+    /// E.g. "comment" and "to" from sendtoaddress.
     #[serde(flatten)]
     pub extra_info: HashMap<String, String>,
 }
