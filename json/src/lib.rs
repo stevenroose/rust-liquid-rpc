@@ -561,7 +561,7 @@ pub struct GetSidechainInfoResult {
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
 pub struct GetPeginAddressResult {
-    pub mainchain_address: String,
+    pub mainchain_address: bitcoin::Address,
     pub claim_script: Script,
 }
 
