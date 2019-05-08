@@ -16,7 +16,7 @@ path = "src/lib.rs"
 
 [dependencies]
 liquid-rpc-json = { version = "0.1.0", path = "../json" }
-bitcoincore-rpc = "0.5"
+bitcoincore-rpc = "0.6"
 
 jsonrpc = "0.11"
 
