@@ -265,7 +265,7 @@ impl Amount {
     ///
     /// Please be aware of the risk of using floating-point numbers.
     pub fn as_float_denom(&self, denom: Denomination) -> f64 {
-        (self.as_sat() as f64) * 10_f64.powi(denom.precision())
+        f64::from_str(&self.to_string_in(denom)).unwrap()
     }
 
     /// Convert an amount in floating-point notation with a given denomination.
@@ -591,6 +591,9 @@ mod tests {
         assert_eq!(Amount::from_btc(-2.5).as_float_denom(D::MilliBitcoin), -2500.0);
         assert_eq!(Amount::from_btc(-2.5).as_float_denom(D::Satoshi), -250000000.0);
         assert_eq!(Amount::from_btc(-2.5).as_float_denom(D::MilliSatoshi), -250000000000.0);
+
+        let btc = move |f| Amount::from_btc(f);
+        assert_eq!(&btc(0.0012).to_float_in(D::Bitcoin).to_string(), "0.0012")
     }
 
     #[test]
