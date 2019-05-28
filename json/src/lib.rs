@@ -299,7 +299,7 @@ pub struct FundRawTransactionOptions {
     #[serde(rename = "changeAddress", skip_serializing_if = "Option::is_none")]
     pub change_address_map: Option<HashMap<AssetId, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub change_position: Option<u32>,
+    pub change_position: Option<i32>,
     #[serde(rename = "change_type", skip_serializing_if = "Option::is_none")]
     pub change_type: Option<bitcoincore_rpc::json::AddressType>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -326,7 +326,7 @@ pub struct FundRawTransactionResult {
     #[serde(with = "amount::serde::as_btc")]
     pub fee: Amount,
     #[serde(rename = "changepos")]
-    pub change_position: u32,
+    pub change_position: i32,
 }
 
 impl FundRawTransactionResult {
