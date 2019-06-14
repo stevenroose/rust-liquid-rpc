@@ -407,6 +407,13 @@ pub trait LiquidRpcApi: Sized {
         self.call("getnewaddress", &[opt_into_json(label)?, opt_into_json(address_type)?])
     }
 
+    fn get_raw_change_address(
+        &self,
+        address_type: Option<btcjson::AddressType>,
+    ) -> Result<String> {
+        self.call("getrawchangeaddress", &[opt_into_json(address_type)?])
+    }
+
     fn validate_address(&self, address: &str) -> Result<json::ValidateAddressResult> {
         self.call("validateaddress", &[address.into()])
     }
