@@ -67,9 +67,8 @@ where
     Ok(Some(res))
 }
 
-// TODO(stevenroose) asset IDs are actually midstates..
 /// Shorthand for an asset ID.
-pub type AssetId = sha256::Hash;
+pub type AssetId = sha256::Midstate;
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
