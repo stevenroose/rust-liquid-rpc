@@ -293,7 +293,7 @@ impl GetRawTransactionResult {
     }
 }
 
-#[derive(Serialize, Clone, PartialEq, Debug)]
+#[derive(Serialize, Clone, PartialEq, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct FundRawTransactionOptions {
     #[serde(rename = "changeAddress", skip_serializing_if = "Option::is_none")]
@@ -335,7 +335,7 @@ impl FundRawTransactionResult {
     }
 }
 
-#[derive(Serialize, Clone, PartialEq, Debug)]
+#[derive(Serialize, Clone, PartialEq, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SignRawTransactionInput {
     pub txid: sha256d::Hash,
@@ -370,7 +370,7 @@ impl SignRawTransactionResult {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListUnspentQueryOptions {
     #[serde(default, with = "amount::serde::as_btc::opt")]
@@ -663,7 +663,7 @@ pub struct ReissueAssetResult {
     pub vin: u32,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Default, Serialize)]
 pub struct RawIssuanceDetails {
     #[serde(rename = "assetamount", with = "amount::serde::as_btc")]
     pub asset_amount: Amount,
@@ -679,7 +679,7 @@ pub struct RawIssuanceDetails {
     pub contract_hash: Option<sha256::Hash>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Default, Serialize)]
 pub struct RawReissuanceDetails {
     pub input_index: u32,
     #[serde(rename = "assetamount", with = "amount::serde::as_btc")]
