@@ -37,7 +37,8 @@ use std::collections::HashMap;
 
 use bitcoin::consensus::encode;
 use bitcoin::util::bip32;
-use bitcoin::{PrivateKey, PublicKey, Script};
+//TODO(stevenroose) use secp public key as soon as it has hex serde
+use bitcoin::{PublicKey, Script};
 use bitcoin_hashes::sha256d;
 use secp256k1::SecretKey;
 
@@ -329,7 +330,7 @@ pub trait LiquidRpcApi: Sized {
     fn sign_raw_transaction_with_key<R: RawTx>(
         &self,
         tx: R,
-        privkeys: &[&PrivateKey],
+        privkeys: &[&SecretKey],
         prevtxs: Option<&[&json::SignRawTransactionInput]>,
         sighash_type: Option<btcjson::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
@@ -407,10 +408,7 @@ pub trait LiquidRpcApi: Sized {
         self.call("getnewaddress", &[opt_into_json(label)?, opt_into_json(address_type)?])
     }
 
-    fn get_raw_change_address(
-        &self,
-        address_type: Option<btcjson::AddressType>,
-    ) -> Result<String> {
+    fn get_raw_change_address(&self, address_type: Option<btcjson::AddressType>) -> Result<String> {
         self.call("getrawchangeaddress", &[opt_into_json(address_type)?])
     }
 
