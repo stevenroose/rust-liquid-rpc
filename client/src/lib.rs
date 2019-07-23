@@ -252,7 +252,7 @@ pub trait LiquidRpcApi: Sized {
         substract_fee: Option<bool>,
         replaceable: Option<bool>,
         confirmation_target: Option<u32>,
-        estimate_mode: Option<bitcoincore_rpc::json::EstimateMode>,
+        estimate_mode: Option<btcjson::EstimateMode>,
         asset_label: Option<&str>,
         ignore_blind_fail: Option<bool>,
     ) -> Result<sha256d::Hash> {
@@ -273,7 +273,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn create_raw_transaction_hex(
         &self,
-        utxos: &[bitcoincore_rpc::json::CreateRawTransactionInput],
+        utxos: &[btcjson::CreateRawTransactionInput],
         outs: &HashMap<String, f64>,
         locktime: Option<i64>,
         replaceable: Option<bool>,
@@ -292,7 +292,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn create_raw_transaction(
         &self,
-        utxos: &[bitcoincore_rpc::json::CreateRawTransactionInput],
+        utxos: &[btcjson::CreateRawTransactionInput],
         outs: &HashMap<String, f64>,
         locktime: Option<i64>,
         replaceable: Option<bool>,
@@ -319,7 +319,7 @@ pub trait LiquidRpcApi: Sized {
         &self,
         tx: R,
         utxos: Option<&[json::SignRawTransactionInput]>,
-        sighash_type: Option<bitcoincore_rpc::json::SigHashType>,
+        sighash_type: Option<btcjson::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
         let mut args = [tx.raw_hex().into(), opt_into_json(utxos)?, opt_into_json(sighash_type)?];
         let defaults = [empty(), null()];
@@ -331,7 +331,7 @@ pub trait LiquidRpcApi: Sized {
         tx: R,
         privkeys: &[&PrivateKey],
         prevtxs: Option<&[json::SignRawTransactionInput]>,
-        sighash_type: Option<bitcoincore_rpc::json::SigHashType>,
+        sighash_type: Option<btcjson::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
         let mut args = [
             tx.raw_hex().into(),
