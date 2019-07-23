@@ -784,7 +784,7 @@ pub trait LiquidRpcApi: Sized {
 /// [liquid_rpc::LiquidRpcApi] trait.  Methods that are shared between Liquid and
 /// Bitcoin Core can be used from the former and changed or new methods are
 /// provided by the latter.
-pub struct Client(bitcoincore_rpc::Client);
+pub struct Client(pub bitcoincore_rpc::Client);
 
 impl Client {
     /// Creates a client to a liquidd JSON-RPC server.
