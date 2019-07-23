@@ -274,7 +274,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn create_raw_transaction_hex(
         &self,
-        utxos: &[&btcjson::CreateRawTransactionInput],
+        utxos: &[btcjson::CreateRawTransactionInput],
         outs: &HashMap<String, f64>,
         locktime: Option<i64>,
         replaceable: Option<bool>,
@@ -293,7 +293,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn create_raw_transaction(
         &self,
-        utxos: &[&btcjson::CreateRawTransactionInput],
+        utxos: &[btcjson::CreateRawTransactionInput],
         outs: &HashMap<String, f64>,
         locktime: Option<i64>,
         replaceable: Option<bool>,
@@ -319,7 +319,7 @@ pub trait LiquidRpcApi: Sized {
     fn sign_raw_transaction_with_wallet<R: RawTx>(
         &self,
         tx: R,
-        utxos: Option<&[&json::SignRawTransactionInput]>,
+        utxos: Option<&[json::SignRawTransactionInput]>,
         sighash_type: Option<btcjson::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
         let mut args = [tx.raw_hex().into(), opt_into_json(utxos)?, opt_into_json(sighash_type)?];
@@ -330,8 +330,8 @@ pub trait LiquidRpcApi: Sized {
     fn sign_raw_transaction_with_key<R: RawTx>(
         &self,
         tx: R,
-        privkeys: &[&SecretKey],
-        prevtxs: Option<&[&json::SignRawTransactionInput]>,
+        privkeys: &[SecretKey],
+        prevtxs: Option<&[json::SignRawTransactionInput]>,
         sighash_type: Option<btcjson::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
         let mut args = [
@@ -597,7 +597,7 @@ pub trait LiquidRpcApi: Sized {
     fn raw_issue_asset<R: RawTx>(
         &self,
         raw_tx: R,
-        issuances: &[&json::RawIssuanceDetails],
+        issuances: &[json::RawIssuanceDetails],
     ) -> Result<json::IssueAssetResult> {
         self.call("rawissueasset", &[raw_tx.raw_hex().into(), into_json(issuances)?])
     }
@@ -605,7 +605,7 @@ pub trait LiquidRpcApi: Sized {
     fn raw_reissue_asset<R: RawTx>(
         &self,
         raw_tx: R,
-        issuances: &[&json::RawReissuanceDetails],
+        issuances: &[json::RawReissuanceDetails],
     ) -> Result<json::RawReissueAssetResult> {
         self.call("rawreissueasset", &[raw_tx.raw_hex().into(), into_json(issuances)?])
     }
@@ -749,7 +749,7 @@ pub trait LiquidRpcApi: Sized {
     fn combine_block_signatures(
         &self,
         block: &elements::Block,
-        signatures: &[&json::SignedBlockSignature],
+        signatures: &[json::SignedBlockSignature],
     ) -> Result<json::CombineBlockSigsResult> {
         let args = [into_json_hex(encode::serialize(block))?, into_json(signatures)?];
         self.call("combineblocksigs", &args)
