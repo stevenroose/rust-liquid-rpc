@@ -273,7 +273,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn create_raw_transaction_hex(
         &self,
-        utxos: &[btcjson::CreateRawTransactionInput],
+        utxos: &[&btcjson::CreateRawTransactionInput],
         outs: &HashMap<String, f64>,
         locktime: Option<i64>,
         replaceable: Option<bool>,
@@ -292,7 +292,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn create_raw_transaction(
         &self,
-        utxos: &[btcjson::CreateRawTransactionInput],
+        utxos: &[&btcjson::CreateRawTransactionInput],
         outs: &HashMap<String, f64>,
         locktime: Option<i64>,
         replaceable: Option<bool>,
@@ -307,7 +307,7 @@ pub trait LiquidRpcApi: Sized {
     fn fund_raw_transaction<R: RawTx>(
         &self,
         tx: R,
-        options: Option<json::FundRawTransactionOptions>,
+        options: Option<&json::FundRawTransactionOptions>,
         is_witness: Option<bool>,
     ) -> Result<json::FundRawTransactionResult> {
         let mut args = [tx.raw_hex().into(), opt_into_json(options)?, opt_into_json(is_witness)?];
@@ -318,7 +318,7 @@ pub trait LiquidRpcApi: Sized {
     fn sign_raw_transaction_with_wallet<R: RawTx>(
         &self,
         tx: R,
-        utxos: Option<&[json::SignRawTransactionInput]>,
+        utxos: Option<&[&json::SignRawTransactionInput]>,
         sighash_type: Option<btcjson::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
         let mut args = [tx.raw_hex().into(), opt_into_json(utxos)?, opt_into_json(sighash_type)?];
@@ -330,7 +330,7 @@ pub trait LiquidRpcApi: Sized {
         &self,
         tx: R,
         privkeys: &[&PrivateKey],
-        prevtxs: Option<&[json::SignRawTransactionInput]>,
+        prevtxs: Option<&[&json::SignRawTransactionInput]>,
         sighash_type: Option<btcjson::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
         let mut args = [
@@ -353,7 +353,7 @@ pub trait LiquidRpcApi: Sized {
         maxconf: Option<usize>,
         addresses: Option<&[&str]>,
         include_unsafe: Option<bool>,
-        query_options: Option<json::ListUnspentQueryOptions>,
+        query_options: Option<&json::ListUnspentQueryOptions>,
     ) -> Result<Vec<json::ListUnspentResultEntry>> {
         let mut args = [
             opt_into_json(minconf)?,
@@ -531,7 +531,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn init_pegout_wallet(
         &self,
-        bitcoin_descriptor: bip32::ExtendedPubKey,
+        bitcoin_descriptor: &bip32::ExtendedPubKey,
         bip32_counter: Option<bip32::ChildNumber>,
         liquid_pak: Option<&str>,
     ) -> Result<json::InitPegoutWalletResult> {
@@ -599,7 +599,7 @@ pub trait LiquidRpcApi: Sized {
     fn raw_issue_asset<R: RawTx>(
         &self,
         raw_tx: R,
-        issuances: &[json::RawIssuanceDetails],
+        issuances: &[&json::RawIssuanceDetails],
     ) -> Result<json::IssueAssetResult> {
         self.call("rawissueasset", &[raw_tx.raw_hex().into(), into_json(issuances)?])
     }
@@ -607,7 +607,7 @@ pub trait LiquidRpcApi: Sized {
     fn raw_reissue_asset<R: RawTx>(
         &self,
         raw_tx: R,
-        issuances: &[json::RawReissuanceDetails],
+        issuances: &[&json::RawReissuanceDetails],
     ) -> Result<json::RawReissueAssetResult> {
         self.call("rawreissueasset", &[raw_tx.raw_hex().into(), into_json(issuances)?])
     }
@@ -691,7 +691,7 @@ pub trait LiquidRpcApi: Sized {
         Ok(encode::deserialize(&bytes)?)
     }
 
-    fn create_blinded_address(&self, address: &str, blinding_pubkey: PublicKey) -> Result<String> {
+    fn create_blinded_address(&self, address: &str, blinding_pubkey: &PublicKey) -> Result<String> {
         let mut args = [
             into_json_hex(address)?,
             //TODO(stevenroose) use PublicKey's serde for rust-bitcoin > 0.18.0
@@ -706,7 +706,7 @@ pub trait LiquidRpcApi: Sized {
         Ok(SecretKey::from_slice(&bytes).map_err(encode::Error::Secp256k1)?)
     }
 
-    fn import_blinding_key(&self, address: &str, blinding_key: SecretKey) -> Result<()> {
+    fn import_blinding_key(&self, address: &str, blinding_key: &SecretKey) -> Result<()> {
         let args = [into_json_hex(address)?, blinding_key.to_string().into()];
         self.call("importblindingkey", &args)
     }
@@ -717,7 +717,7 @@ pub trait LiquidRpcApi: Sized {
         Ok(SecretKey::from_slice(&bytes).map_err(encode::Error::Secp256k1)?)
     }
 
-    fn import_master_blinding_key(&self, master_blinding_key: SecretKey) -> Result<()> {
+    fn import_master_blinding_key(&self, master_blinding_key: &SecretKey) -> Result<()> {
         self.call("importmasterblindingkey", &[master_blinding_key.to_string().into()])
     }
 
@@ -731,7 +731,7 @@ pub trait LiquidRpcApi: Sized {
         &self,
         txid: &sha256d::Hash,
         vin: u32,
-        blinding_key: SecretKey,
+        blinding_key: &SecretKey,
     ) -> Result<()> {
         let args = [into_json(txid)?, vin.into(), blinding_key.to_string().into()];
         self.call("importissuanceblindingkey", &args)
@@ -744,31 +744,31 @@ pub trait LiquidRpcApi: Sized {
         Ok(encode::deserialize(&bytes)?)
     }
 
-    fn sign_block(&self, block: elements::Block) -> Result<Vec<json::SignedBlockSignature>> {
-        self.call("signblock", &[into_json_hex(encode::serialize(&block))?])
+    fn sign_block(&self, block: &elements::Block) -> Result<Vec<json::SignedBlockSignature>> {
+        self.call("signblock", &[into_json_hex(encode::serialize(block))?])
     }
 
     fn combine_block_signatures(
         &self,
-        block: elements::Block,
+        block: &elements::Block,
         signatures: &[&json::SignedBlockSignature],
     ) -> Result<json::CombineBlockSigsResult> {
-        let args = [into_json_hex(encode::serialize(&block))?, into_json(signatures)?];
+        let args = [into_json_hex(encode::serialize(block))?, into_json(signatures)?];
         self.call("combineblocksigs", &args)
     }
 
     fn test_proposed_block(
         &self,
-        block: elements::Block,
+        block: &elements::Block,
         accept_non_standard: Option<bool>,
     ) -> Result<()> {
         let mut args =
-            [into_json_hex(encode::serialize(&block))?, opt_into_json(accept_non_standard)?];
+            [into_json_hex(encode::serialize(block))?, opt_into_json(accept_non_standard)?];
         self.call("testproposedblock", handle_defaults(&mut args, &[null()]))
     }
 
-    fn submit_block(&self, block: elements::Block) -> Result<String> {
-        self.call("submitblock", &[into_json_hex(encode::serialize(&block))?])
+    fn submit_block(&self, block: &elements::Block) -> Result<String> {
+        self.call("submitblock", &[into_json_hex(encode::serialize(block))?])
     }
 
     //TODO(stevenroose)
