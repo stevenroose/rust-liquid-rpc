@@ -16,13 +16,13 @@
 #![crate_name = "liquid_rpc"]
 #![crate_type = "rlib"]
 
-extern crate bitcoin;
-extern crate bitcoin_hashes;
-extern crate bitcoincore_rpc;
-extern crate elements;
+pub extern crate bitcoin;
+pub extern crate bitcoin_hashes;
+pub extern crate bitcoincore_rpc;
+pub extern crate elements;
 extern crate hex;
 extern crate jsonrpc;
-extern crate secp256k1;
+pub extern crate secp256k1;
 extern crate serde;
 extern crate serde_json;
 
