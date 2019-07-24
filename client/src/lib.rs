@@ -327,10 +327,13 @@ pub trait LiquidRpcApi: Sized {
         self.call("signrawtransactionwithwallet", handle_defaults(&mut args, &defaults))
     }
 
+    /// We use [bitcoin::PrivateKey] because the keys need to be WIF-encoded.
+    /// Use [bitcoin::Network::Bitcoin] for Liquid and
+    /// [bitcoin::Network::Regtest] for Elements Regtest.
     fn sign_raw_transaction_with_key<R: RawTx>(
         &self,
         tx: R,
-        privkeys: &[SecretKey],
+        privkeys: &[bitcoin::PrivateKey],
         prevtxs: Option<&[json::SignRawTransactionInput]>,
         sighash_type: Option<btcjson::SigHashType>,
     ) -> Result<json::SignRawTransactionResult> {
