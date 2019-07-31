@@ -708,7 +708,7 @@ pub trait LiquidRpcApi: Sized {
     }
 
     fn import_blinding_key(&self, address: &str, blinding_key: &SecretKey) -> Result<()> {
-        let args = [into_json_hex(address)?, blinding_key.to_string().into()];
+        let args = [address.into(), blinding_key.to_string().into()];
         self.call("importblindingkey", &args)
     }
 
