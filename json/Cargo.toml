@@ -1,6 +1,6 @@
 [package]
 name = "liquid-rpc-json"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Steven Roose <steven@stevenroose.org>"]
 description = "JSON-enabled type structs for liquid-rpc crate."
 license = "CC0-1.0"
@@ -15,13 +15,9 @@ name = "liquid_rpc_json"
 path = "src/lib.rs"
 
 [dependencies]
-bitcoincore-rpc = "0.7"
+bitcoincore-rpc = "0.11"
 
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
-hex = "0.3"
 
-bitcoin = { version = "0.18", features = [ "use-serde" ] }
-elements = { version = "0.7.0", features = [ "serde-feature" ] }
-bitcoin_hashes = { version = "0.7", features = [ "serde" ] }
-secp256k1 = { version = "0.12", features = [ "serde" ] }
+elements = { version = "0.12.0", features = [ "serde-feature" ] }

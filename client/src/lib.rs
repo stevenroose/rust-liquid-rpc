@@ -16,47 +16,52 @@
 #![crate_name = "liquid_rpc"]
 #![crate_type = "rlib"]
 
-pub extern crate bitcoin;
-pub extern crate bitcoin_hashes;
 pub extern crate bitcoincore_rpc;
 pub extern crate elements;
-extern crate hex;
-extern crate jsonrpc;
-pub extern crate secp256k1;
+pub extern crate jsonrpc;
 extern crate serde;
 extern crate serde_json;
 
 pub extern crate liquid_rpc_json;
-pub use json::{bitcoin_asset, Amount, AssetId, BITCOIN_ASSET_HEX};
+pub use json::{bitcoin_asset, AssetId, BITCOIN_ASSET_HEX};
 pub use liquid_rpc_json as json;
 
+mod error;
+
+pub use error::Error;
 pub use bitcoincore_rpc::json as btcjson;
-pub use bitcoincore_rpc::{Auth, Error, Result};
+pub use bitcoincore_rpc::Auth;
+
+pub type Result<T> = ::std::result::Result<T, Error>;
 
 use std::collections::HashMap;
 
-use bitcoin::consensus::encode;
+use elements::bitcoin;
+
+use bitcoin::hashes::hex::{FromHex, ToHex};
 use bitcoin::util::bip32;
 //TODO(stevenroose) use secp public key as soon as it has hex serde
 use bitcoin::{PublicKey, Script};
-use bitcoin_hashes::sha256d;
-use secp256k1::SecretKey;
+use bitcoin::hashes::sha256d;
+use bitcoin::secp256k1::SecretKey;
+use bitcoin::util::amount::{self, Amount};
+use elements::encode;
 
 /// Serialize an amount returned by the RPC.
 fn ser_amount(amount: &Amount) -> serde_json::Value {
-    amount.as_float_denom(json::amount::Denomination::Bitcoin).into()
+    amount.to_float_in(amount::Denomination::Bitcoin).into()
 }
 
-fn deser_amount(val: serde_json::Value) -> Amount {
-    Amount::from_float_denom(val.as_f64().unwrap(), json::amount::Denomination::Bitcoin)
+fn deser_amount(val: serde_json::Value) -> Result<Amount> {
+    Amount::from_float_in(val.as_f64().unwrap(), amount::Denomination::Bitcoin).map_err(From::from)
 }
 
-fn convert_balances(balances: HashMap<String, serde_json::Value>) -> HashMap<String, Amount> {
+fn convert_balances(balances: HashMap<String, serde_json::Value>) -> Result<HashMap<String, Amount>> {
     let mut ret = HashMap::new();
     for (k, v) in balances.into_iter() {
-        ret.insert(k, deser_amount(v));
+        ret.insert(k, deser_amount(v)?);
     }
-    ret
+    Ok(ret)
 }
 
 /// Shorthand for converting a variable into a serde_json::Value.
@@ -69,7 +74,7 @@ where
 
 /// Shorthand for converting bytes into a serde_json::Value.
 fn into_json_hex<T: AsRef<[u8]>>(val: T) -> Result<serde_json::Value> {
-    Ok(serde_json::to_value(hex::encode(val))?)
+    Ok(serde_json::to_value(val.as_ref().to_hex())?)
 }
 
 /// Shorthand for converting an Option into an Option<serde_json::Value>.
@@ -86,7 +91,7 @@ where
 /// Shorthand for converting bytes into a serde_json::Value.
 fn opt_into_json_hex<T: AsRef<[u8]>>(opt: Option<T>) -> Result<serde_json::Value> {
     match opt {
-        Some(b) => Ok(serde_json::to_value(hex::encode(b))?),
+        Some(b) => Ok(serde_json::to_value(b.as_ref().to_hex())?),
         None => Ok(serde_json::Value::Null),
     }
 }
@@ -172,19 +177,19 @@ pub trait RawTx: Sized {
 
 impl<'a> RawTx for &'a elements::Transaction {
     fn raw_hex(self) -> String {
-        hex::encode(bitcoin::consensus::encode::serialize(self))
+        encode::serialize(self).to_hex()
     }
 }
 
 impl<'a> RawTx for &'a [u8] {
     fn raw_hex(self) -> String {
-        hex::encode(self)
+        self.to_hex()
     }
 }
 
 impl<'a> RawTx for &'a Vec<u8> {
     fn raw_hex(self) -> String {
-        hex::encode(self)
+        self.to_hex()
     }
 }
 
@@ -210,7 +215,7 @@ pub trait LiquidRpcApi: Sized {
 
     fn get_block_header_raw(&self, hash: &sha256d::Hash) -> Result<elements::BlockHeader> {
         let hex: String = self.call("getblockheader", &[into_json(hash)?, false.into()])?;
-        let bytes = hex::decode(hex)?;
+        let bytes = Vec::<u8>::from_hex(&hex)?;
         Ok(encode::deserialize(&bytes)?)
     }
 
@@ -231,7 +236,7 @@ pub trait LiquidRpcApi: Sized {
     ) -> Result<elements::Transaction> {
         let mut args = [into_json(txid)?, into_json(false)?, opt_into_json(block_hash)?];
         let hex: String = self.call("getrawtransaction", handle_defaults(&mut args, &[null()]))?;
-        let bytes = hex::decode(hex)?;
+        let bytes = Vec::<u8>::from_hex(&hex)?;
         Ok(encode::deserialize(&bytes)?)
     }
 
@@ -301,7 +306,7 @@ pub trait LiquidRpcApi: Sized {
     ) -> Result<elements::Transaction> {
         let hex: String =
             self.create_raw_transaction_hex(utxos, outs, locktime, replaceable, assets)?;
-        let bytes = hex::decode(hex)?;
+        let bytes = Vec::<u8>::from_hex(&hex)?;
         Ok(encode::deserialize(&bytes)?)
     }
 
@@ -444,7 +449,7 @@ pub trait LiquidRpcApi: Sized {
             opt_into_json(include_watch_only)?,
         ];
         self.call("getbalance", handle_defaults(&mut args, &[0.into(), null()]))
-            .map(convert_balances)
+            .and_then(convert_balances)
     }
 
     fn get_balance_asset(
@@ -460,11 +465,11 @@ pub trait LiquidRpcApi: Sized {
             opt_into_json(Some(asset_label))?,
         ];
         self.call("getbalance", handle_defaults(&mut args, &[0.into(), false.into(), null()]))
-            .map(deser_amount)
+            .and_then(deser_amount)
     }
 
     fn get_unconfirmed_balance(&self) -> Result<HashMap<String, Amount>> {
-        self.call("getunconfirmedbalance", handle_defaults(&mut [], &[])).map(convert_balances)
+        self.call("getunconfirmedbalance", handle_defaults(&mut [], &[])).and_then(convert_balances)
     }
 
     fn get_received_by_address(
@@ -474,7 +479,7 @@ pub trait LiquidRpcApi: Sized {
     ) -> Result<HashMap<String, Amount>> {
         let mut args = [address.into(), opt_into_json(min_confirmations)?];
         self.call("getreceivedbyaddress", handle_defaults(&mut args, &[null()]))
-            .map(convert_balances)
+            .and_then(convert_balances)
     }
 
     fn get_received_by_address_asset(
@@ -486,7 +491,7 @@ pub trait LiquidRpcApi: Sized {
         let mut args =
             [address.into(), opt_into_json(min_confirmations)?, opt_into_json(Some(asset_label))?];
         self.call("getreceivedbyaddress", handle_defaults(&mut args, &[0.into(), null()]))
-            .map(deser_amount)
+            .and_then(deser_amount)
     }
 
     // TODO(stevenroose)
@@ -651,7 +656,7 @@ pub trait LiquidRpcApi: Sized {
             "blindrawtransaction",
             handle_defaults(&mut args, &[true.into(), empty(), null()]),
         )?;
-        let bytes = hex::decode(hex)?;
+        let bytes = Vec::<u8>::from_hex(&hex)?;
         Ok(encode::deserialize(&bytes)?)
     }
 
@@ -688,7 +693,7 @@ pub trait LiquidRpcApi: Sized {
         ];
         let hex: String =
             self.call("rawblindrawtransaction", handle_defaults(&mut args, &[null()]))?;
-        let bytes = hex::decode(hex)?;
+        let bytes = Vec::<u8>::from_hex(&hex)?;
         Ok(encode::deserialize(&bytes)?)
     }
 
@@ -703,8 +708,8 @@ pub trait LiquidRpcApi: Sized {
 
     fn dump_blinding_key(&self, address: &str) -> Result<SecretKey> {
         let hex: String = self.call("dumpblindingkey", &[into_json_hex(address)?])?;
-        let bytes = hex::decode(hex)?;
-        Ok(SecretKey::from_slice(&bytes).map_err(encode::Error::Secp256k1)?)
+        let bytes = Vec::<u8>::from_hex(&hex)?;
+        Ok(SecretKey::from_slice(&bytes).map_err(Error::Secp256k1)?)
     }
 
     fn import_blinding_key(&self, address: &str, blinding_key: &SecretKey) -> Result<()> {
@@ -714,8 +719,8 @@ pub trait LiquidRpcApi: Sized {
 
     fn dump_master_blinding_key(&self) -> Result<SecretKey> {
         let hex: String = self.call("dumpmasterblindingkey", &[])?;
-        let bytes = hex::decode(hex)?;
-        Ok(SecretKey::from_slice(&bytes).map_err(encode::Error::Secp256k1)?)
+        let bytes = Vec::<u8>::from_hex(&hex)?;
+        Ok(SecretKey::from_slice(&bytes).map_err(Error::Secp256k1)?)
     }
 
     fn import_master_blinding_key(&self, master_blinding_key: &SecretKey) -> Result<()> {
@@ -724,8 +729,8 @@ pub trait LiquidRpcApi: Sized {
 
     fn dump_issuance_blinding_key(&self, txid: &sha256d::Hash, vin: u32) -> Result<SecretKey> {
         let hex: String = self.call("dumpissuanceblindingkey", &[into_json(txid)?, vin.into()])?;
-        let bytes = hex::decode(hex)?;
-        Ok(SecretKey::from_slice(&bytes).map_err(encode::Error::Secp256k1)?)
+        let bytes = Vec::<u8>::from_hex(&hex)?;
+        Ok(SecretKey::from_slice(&bytes).map_err(Error::Secp256k1)?)
     }
 
     fn import_issuance_blinding_key(
@@ -741,7 +746,7 @@ pub trait LiquidRpcApi: Sized {
     fn get_new_block(&self, min_tx_age_secs: Option<usize>) -> Result<elements::Block> {
         let mut args = [opt_into_json(min_tx_age_secs)?];
         let hex: String = self.call("getnewblockhex", handle_defaults(&mut args, &[null()]))?;
-        let bytes = hex::decode(hex)?;
+        let bytes = Vec::<u8>::from_hex(&hex)?;
         Ok(encode::deserialize(&bytes)?)
     }
 
@@ -790,7 +795,7 @@ pub struct Client(pub bitcoincore_rpc::Client);
 impl Client {
     /// Creates a client to a liquidd JSON-RPC server.
     pub fn new(url: String, auth: Auth) -> Result<Self> {
-        bitcoincore_rpc::Client::new(url, auth).map(Client)
+        bitcoincore_rpc::Client::new(url, auth).map(Client).map_err(From::from)
     }
 
     /// Create a new Client.
@@ -804,7 +809,7 @@ impl bitcoincore_rpc::RpcApi for Client {
         &self,
         cmd: &str,
         args: &[serde_json::Value],
-    ) -> Result<T> {
+    ) -> bitcoincore_rpc::Result<T> {
         bitcoincore_rpc::RpcApi::call(&self.0, cmd, args)
     }
 }
@@ -815,6 +820,6 @@ impl LiquidRpcApi for Client {
         cmd: &str,
         args: &[serde_json::Value],
     ) -> Result<T> {
-        bitcoincore_rpc::RpcApi::call(self, cmd, args)
+        bitcoincore_rpc::RpcApi::call(self, cmd, args).map_err(From::from)
     }
 }

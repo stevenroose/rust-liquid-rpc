@@ -16,27 +16,21 @@
 #![crate_name = "liquid_rpc_json"]
 #![crate_type = "rlib"]
 
-extern crate bitcoin;
-extern crate bitcoin_hashes;
 extern crate bitcoincore_rpc;
 extern crate elements;
-extern crate hex;
-extern crate secp256k1;
 extern crate serde;
 extern crate serde_json;
-
-pub mod amount;
-pub use amount::Amount;
 
 use std::collections::HashMap;
 use std::result;
 
-use bitcoin::consensus::encode;
+use elements::bitcoin;
+use elements::encode;
 use bitcoin::{PublicKey, Script};
-use bitcoin_hashes::hex::FromHex;
-use bitcoin_hashes::{sha256, sha256d};
+use bitcoin::hashes::hex::FromHex;
+use bitcoin::hashes::{sha256, sha256d};
+use bitcoin::util::amount::{self, Amount};
 use bitcoincore_rpc::json::serde_hex;
-use bitcoincore_rpc::Result;
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
 
@@ -62,7 +56,7 @@ where
     let v: Vec<String> = Vec::deserialize(deserializer)?;
     let mut res = Vec::new();
     for h in v.into_iter() {
-        res.push(hex::decode(h).map_err(D::Error::custom)?);
+        res.push(Vec::<u8>::from_hex(&h).map_err(D::Error::custom)?);
     }
     Ok(Some(res))
 }
@@ -153,7 +147,7 @@ pub struct GetRawTransationResultVinIssuance {
 
 impl GetRawTransationResultVinIssuance {
     /// Get the asset issuance in elements type.
-    pub fn asset_issuance(&self) -> Result<elements::AssetIssuance> {
+    pub fn asset_issuance(&self) -> Result<elements::AssetIssuance, encode::Error> {
         Ok(elements::AssetIssuance {
             asset_blinding_nonce: {
                 if self.asset_blinding_nonce.len() != 32 {
@@ -287,7 +281,7 @@ pub struct GetRawTransactionResult {
 }
 
 impl GetRawTransactionResult {
-    pub fn transaction(&self) -> Result<elements::Transaction> {
+    pub fn transaction(&self) -> Result<elements::Transaction, encode::Error> {
         Ok(encode::deserialize(&self.hex)?)
     }
 }
@@ -329,7 +323,7 @@ pub struct FundRawTransactionResult {
 }
 
 impl FundRawTransactionResult {
-    pub fn transaction(&self) -> Result<elements::Transaction> {
+    pub fn transaction(&self) -> Result<elements::Transaction, encode::Error> {
         Ok(encode::deserialize(&self.hex)?)
     }
 }
@@ -364,7 +358,7 @@ pub struct SignRawTransactionResult {
 }
 
 impl SignRawTransactionResult {
-    pub fn transaction(&self) -> Result<elements::Transaction> {
+    pub fn transaction(&self) -> Result<elements::Transaction, encode::Error> {
         Ok(encode::deserialize(&self.hex)?)
     }
 }
@@ -572,7 +566,7 @@ pub struct CreateRawPeginResult {
 }
 
 impl CreateRawPeginResult {
-    pub fn transaction(&self) -> Result<elements::Transaction> {
+    pub fn transaction(&self) -> Result<elements::Transaction, encode::Error> {
         Ok(encode::deserialize(&self.hex)?)
     }
 }
@@ -698,7 +692,7 @@ pub struct RawReissueAssetResult {
 }
 
 impl RawReissueAssetResult {
-    pub fn transaction(&self) -> Result<elements::Transaction> {
+    pub fn transaction(&self) -> Result<elements::Transaction, encode::Error> {
         Ok(encode::deserialize(&self.hex)?)
     }
 }
@@ -710,7 +704,7 @@ pub struct UnblindRawTransactionResult {
 }
 
 impl UnblindRawTransactionResult {
-    pub fn transaction(&self) -> Result<elements::Transaction> {
+    pub fn transaction(&self) -> Result<elements::Transaction, encode::Error> {
         Ok(encode::deserialize(&self.hex)?)
     }
 }
@@ -729,7 +723,7 @@ pub struct CombineBlockSigsResult {
 }
 
 impl CombineBlockSigsResult {
-    pub fn block(&self) -> Result<elements::Block> {
+    pub fn block(&self) -> Result<elements::Block, encode::Error> {
         Ok(encode::deserialize(&self.hex)?)
     }
 }
